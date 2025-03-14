@@ -166,25 +166,25 @@ class Consulta():
             self.__tablas_secundarias[t2] = 0
             self.__parametros_principales += ', ' + self.etiquetar(t2, c2) 
         self.__parametros_principales += '\n'
-        self.From(tabla)
+        self.__From(tabla)
         return self
     def Delete(self, tabla : str):
         self.__tabla_principal = tabla
         self.__instruccionPrincipal.esDelete()
-        self.From(tabla)
+        self.__From(tabla)
         self.Where(TipoCondicion.NO_ES, id = None)
         return self
     def Insert(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]):
         self.__tabla_principal = tabla
         self.__instruccionPrincipal.esInsert()
         self.__parametros_principales = 'INTO ' + tabla + '\n'
-        self.Set(**asignaciones)
+        self.__Set(**asignaciones)
         return self
     def Update(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]):
         self.__tabla_principal = tabla
         self.__instruccionPrincipal.esUpdate()
         self.__parametros_principales = tabla + '\n'
-        self.Set(**asignaciones)
+        self.__Set(**asignaciones)
         self.Where(TipoCondicion.NO_ES, id = None)
 
         return self
@@ -205,10 +205,10 @@ class Consulta():
         if self.__limite : raise ErrorMalaSintaxisSQL("La clausula LIMIT ya ha sido definida.")
         self.__limite  =  'LIMIT ' + str(desplazamiento) + ', ' + str(limite) + '\n'
         return self
-    def From(self, tabla : str):
+    def __From(self, tabla : str):
         self.__parametros_principales += 'FROM ' + tabla + '\n'
         return self
-    def Set(self, **columnaValor : Unpack[dict[str, Any]]):
+    def __Set(self, **columnaValor : Unpack[dict[str, Any]]):
         asignaciones = ', '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } = {self.adaptar(valor)}" for columna, valor in columnaValor.items())
         self.__parametros_principales += f'SET {asignaciones}\n'
         return self
@@ -359,7 +359,7 @@ class BaseDeDatos_MySQL():
 
 
   # with BaseDeDatos() as bdd
-    def __enter__(self) -> 'BaseDeDatos':
+    def __enter__(self) -> 'BaseDeDatos_MySQL':
         if self.__conexion is None:
             return self.conectar()
         # ###print(f"[DEBUG] Entrando {self.__cursor=}{self.__conexion=}{self.__pool=}")
