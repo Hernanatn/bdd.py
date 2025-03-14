@@ -8,7 +8,20 @@ from bdd.tipos.enum_sql import *
 ### BDD
 Resultado : TypeAlias = dict[str,Any]
 
-class TipoJoin(EnumSQL):
-    LEFT_JOIN = 1
-    RIGHT_JOIN = 2
-    INNER_JOIN = 3
+
+class TipoCondicion:
+    IGUAL = '='
+    DIFERENTE = '!='
+    MAYOR = '>'
+    MENOR = '<'
+    MAYOR_O_IGUAL = '>='
+    MENOR_O_IGUAL = '<='
+    NO_ES = 'IS NOT'
+
+class TipoUnion:
+    INNER = 'INNER'
+    LEFT  = 'LEFT'
+    RIGHT = 'RIGHT'
+    FULL  = 'FULL'
+
+
