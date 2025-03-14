@@ -28,7 +28,7 @@ class Tabla(type):
         slots :list[str] = []        
         anotaciones : dict[str,type] = {}
         with bdd as bdd:
-            resultados = bdd.DESCRIBE(cls.__tabla).Ejecutar().DevolverResultados()
+            resultados = bdd.DESCRIBE(cls.__tabla).ejecutar().devolverResultados()
             
             for columna in resultados:
                 nombre_campo = columna.get('Field')
@@ -100,14 +100,14 @@ class Tabla(type):
             'tinytext': str,
             'boolean': bool,
             'bool': bool,
-            'tinyint(1)': Union[bool,int],
-            'blob': Union[bytes,bytearray],
-            'mediumblob': Union[bytes,bytearray],
-            'longblob': Union[bytes,bytearray],
-            'tinyblob': Union[bytes,bytearray],
-            'binary': Union[bytes,bytearray],
-            'varbinary': Union[bytes,bytearray],
-            'json': Union[dict,list,tuple],
+            'tinyint(1)': bool,
+            'blob': bytearray,
+            'mediumblob': bytearray,
+            'longblob': bytearray,
+            'tinyblob': bytearray,
+            'binary': bytearray,
+            'varbinary': bytearray,
+            'json': dict,
         }
 
         

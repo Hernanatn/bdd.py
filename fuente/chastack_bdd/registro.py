@@ -50,11 +50,10 @@ class Registro:
         
         with bdd as bdd:
             resultado = bdd\
-                        .SELECT(*atributos)\
-                        .FROM(self.tabla)\
+                        .SELECT(self.tabla,atributos)\
                         .WHERE(id=id)\
-                        .Ejecutar()\
-                        .DevolverUnResultado()
+                        .ejecutar()\
+                        .devolverUnResultado()
 
         self.__init__(
             bdd,
@@ -95,11 +94,10 @@ class Registro:
     
         with self.__bdd as bdd:
             id : int = bdd\
-                        .UPDATE(self.tabla)\
-                        .SET(**ediciones)\
+                        .UPDATE(self.tabla,**ediciones)\
                         .WHERE(id=self.__id)\
-                        .Ejecutar()\
-                        .DevolverIdUltimaInsercion()
+                        .ejecutar()\
+                        .devolverIdUltimaInsercion()
             self.__id = id
         
         return self.__id
@@ -118,7 +116,6 @@ class Registro:
 
         with self.__bdd as bdd:
             bdd\
-                .UPDATE(self.tabla)\
-                .SET(**ediciones)\
+                .UPDATE(self.tabla,**ediciones)\
                 .WHERE(id=self.__id)\
-                .Ejecutar()
+                .ejecutar()

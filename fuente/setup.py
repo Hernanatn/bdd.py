@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='chastack-bdd',
     description="setuptools.build_meta",
-    version='0.1.0',
+    version='0.1.5',
     author           = 'Hernán A. Teszkiewicz Novick',
     author_email     = 'herni@cajadeideas.ar',
     url= 'https://github.com/Hernanatn/bdd.py',
