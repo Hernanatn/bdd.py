@@ -47,7 +47,7 @@ class Registro:
                     valor = valor_SQL
                 setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, valor)
         self.__bdd = bdd
-        self.__id = None
+        self.__id = self.__id if hasattr(self,atributoPrivado(self,"id")) else None  
 
     @sobrecargar
     def __init__(self, bdd : ProtocoloBaseDeDatos, id : int, *, debug : bool =False):
