@@ -33,7 +33,9 @@ class Registro:
             if valor_SQL is not None:
                 valor = valor_SQL
                 tipo_esperado : type = self.__class__.__annotations__[atributo]
-                if issubclass(tipo_esperado, Decimal):
+                if isinstance(valor_SQL,tipo_esperado):
+                    valor = valor_SQL
+                elif issubclass(tipo_esperado, Decimal):
                     valor : Decimal = Decimal(valor_SQL)
                 elif issubclass(tipo_esperado, dict):
                     valor : dict = loads(valor_SQL)
