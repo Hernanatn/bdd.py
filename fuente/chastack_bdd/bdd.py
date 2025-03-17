@@ -12,6 +12,7 @@ class ProtocoloBaseDeDatos(Protocol):
     def UPDATE(self : Self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: ...
     def WHERE(self : Self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]) -> Self: ...
     def JOIN(self : Self,   tablaSecundaria, columnaPrincipal, columnaSecundaria, tipoUnion : TipoUnion = TipoUnion.INNER) -> Self: ...
+    def ORDER_BY(self, orden : [dict[str, TipoOrden]]): ...
     def LIMIT(self : Self, desplazamiento: int  , limite : int) -> Self: ...
     def __enter__(self) -> Self: ...
     def __exit__(self, exc_type,excl_val,exc_tb) -> None: ...
@@ -45,11 +46,11 @@ class InstruccionPrincipal():
         self.__instruccion = 'DELETE'
     def esUpdate(self):
         self.__instruccion = 'UPDATE'
-    def construirConsulta(self, parametrosPrincipales, condicion, union, limite):
+    def construirConsulta(self, parametrosPrincipales, condicion, union, orden,  limite):
         if not self.__instruccion: raise ErrorMalaSintaxisSQL("No se ha definido una clausula principal.")
         if self.__instruccion == 'INSERT':
             if condicion or union or limite: raise ErrorMalaSintaxisSQL("Las instrucciones INSERT no pueden tener clausulas WHERE, JOIN o LIMIT.")
-        return self.__instruccion + '\n' + parametrosPrincipales + condicion + union + limite + ';'
+        return self.__instruccion + '\n' + parametrosPrincipales + condicion + union + orden + limite + ';'
 
 
 class Consulta():
@@ -128,19 +129,14 @@ class Consulta():
         '__tablas_secundarias',
         '__condicion',
         '__union',
-        '__limite')
+        '__orden',
+        '__limite',
+        )
 
     
 
     def __init__(self):
-        self.__instruccionPrincipal = InstruccionPrincipal()
-        self.__parametros_principales = ''
-        self.__condicion = ''
-        self.__union = ''
-        self.__limite = ''
-
-        self.__tabla_principal = ''
-        self.__tablas_secundarias = {}
+        self.reiniciar()
 
     def SELECT(self, tabla : str, columnas : list[str], columnasSecundarias: Optional[dict[str, list[str]] ] = {}) -> Self:
         self.__tabla_principal = tabla
@@ -175,12 +171,18 @@ class Consulta():
         self.__parametros_principales = tabla + '\n'
         self.__SET(**asignaciones)
         self.WHERE(TipoCondicion.NO_ES, id = None)
-
         return self
     def WHERE(self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]):
         condiciones : str = '   AND '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } {tipoCondicion} {self.adaptar(valor)}" for columna, valor in columnaValor.items())
+        if not condiciones: return self
         if not self.__condicion: self.__condicion = f'WHERE {condiciones}\n'
         else: self.__condicion += f' AND {condiciones}\n'
+        return self
+    def ORDER_BY(self, orden : [dict[str, TipoOrden]]):
+        if not orden: return self
+        orden : str = ', '.join(f"{self.etiquetar(self.__tabla_principal,[columna])} {direccion}" for columna, direccion in orden.items())        
+        if not self.__orden: self.__orden = f'ORDER BY {orden}\n'
+        else: self.__orden += f' , {orden}\n'
         return self
 
     
@@ -204,21 +206,24 @@ class Consulta():
 
     
     
-    def etiquetar(self, tabla: str, columnas : list[str]):
-        # Recibe una tabla y columnas. devuelve cada columna en el namespace de la tabla 
+    def etiquetar(self, tabla: str, columnas : list[str]) -> str:
+        """Recibe una tabla y columnas. devuelve cada columna en el namespace de la tabla"""
         return ', '.join([tabla + '.' + columna  for columna in columnas])
 
     def adaptar(self, valor : Any) -> str:
-        #En caso de que el valor sea de un tipo estpecial debe convertirse a string fuera del llamado para que la consulta no falle
-        if not valor:
-            return "NULL"
-        if type(valor) == int:
-            return str(valor)
-        else:
-            return "'" + str(valor) + "'"
+        return formatearValorParaSQL(valor)
 
     def reiniciar(self):
-        self.consulta = ''
+        self.__instruccionPrincipal = InstruccionPrincipal()
+        self.__parametros_principales = ''
+        self.__condicion = ''
+        self.__union = ''
+        self.__orden = ''
+        self.__limite = ''
+
+        self.__tabla_principal = ''
+        self.__tablas_secundarias = {}
+
     
     def __str__(self):
         if not self.__parametros_principales: raise ErrorMalaSintaxisSQL("No se ha definido una clausula principal.") 
@@ -226,7 +231,7 @@ class Consulta():
             if valor == 0:
                 raise ErrorMalaSintaxisSQL(f"La tabla {tabla} no ha sido unida.")
         
-        return self.__instruccionPrincipal.construirConsulta(self.__parametros_principales, self.__condicion, self.__union, self.__limite)
+        return self.__instruccionPrincipal.construirConsulta(self.__parametros_principales, self.__condicion, self.__union, self.__orden, self.__limite)
         
 
 
@@ -318,6 +323,9 @@ class BaseDeDatos_MySQL():
     def WHERE(self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]) -> Self: 
         self.__consulta.WHERE(tipoCondicion, **columnaValor)
         return self
+    def ORDER_BY(self, orden : [dict[str, TipoOrden]]):
+        self.__consulta.ORDER_BY(orden)
+        return self
     def JOIN(self,   tablaSecundaria, columnaPrincipal, columnaSecundaria, tipoUnion : TipoUnion = TipoUnion.INNER) -> Self: 
         self.__consulta.JOIN(tablaSecundaria, columnaPrincipal, columnaSecundaria, tipoUnion)
         return self
@@ -348,7 +356,7 @@ class BaseDeDatos_MySQL():
         return self
 
     @sobrecargar
-    def ejecutar(self) :
+    def ejecutar(self) -> Optional[list[Resultado]] :
 
         try:
             self.__cursor.execute(str(self.__consulta))
