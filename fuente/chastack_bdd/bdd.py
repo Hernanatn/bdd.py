@@ -121,7 +121,7 @@ class Consulta():
     
     '''
 
-    _slots__ = \
+    __slots__ = \
     (   '__parametros_principales',
         '__instruccionPrincipal',
         '__tabla_principal',
