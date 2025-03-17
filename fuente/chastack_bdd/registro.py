@@ -46,6 +46,8 @@ class Registro:
                 else:
                     valor = valor_SQL
                 setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, valor)
+            else:
+                setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, None)
         self.__bdd = bdd
         self.__id = getattr(self,atributoPrivado(self,'id')) if hasattr(self,atributoPrivado(self,'id')) else None  
 
@@ -101,8 +103,7 @@ class Registro:
     
         with self.__bdd as bdd:
             id : int = bdd\
-                        .UPDATE(self.tabla,**ediciones)\
-                        .WHERE(id=self.__id)\
+                        .INSERT(self.tabla,**ediciones)\
                         .ejecutar()\
                         .devolverIdUltimaInsercion()
             self.__id = id

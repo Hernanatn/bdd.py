@@ -9,38 +9,21 @@ from chastack_bdd.bdd import ConfigMySQL, BaseDeDatos_MySQL
 from chastack_bdd.tabla import Tabla  
 from chastack_bdd.registro import Registro
 
-class Discos(metaclass=Tabla):
-    def devolverArtista(self):
-        return self.idAutor
+class Administrador(metaclass=Tabla):
+    ...
 
 
-config = ConfigMySQL("localhost", "servidor_local", "Servidor!1234", "BaseDePrueba")
 bdd = BaseDeDatos_MySQL(config)
 
-disco1 = Discos(bdd=bdd,id=2)
+admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario="admin9",contrasena="admin1234".encode('utf-8'),correo="admin9@fundacionzaffaroni.ar"))
+admin1.guardar()
+
+admin1 = Administrador(bdd=bdd,id=1)
+print(admin1.correo)
 
 
-print(disco1.tabla)
-print(disco1.id)
-print(disco1.tipo.haciaCadena())
-print(disco1.soporte)
-print(disco1.devolverArtista())
-
-disco2 = Discos(bdd=bdd,id=5)
-
-
-print(disco2.tabla)
-print(disco2.id)
-print(disco2.tipo.haciaCadena())
-print(disco2.soporte)
-print(disco2.devolverArtista())
-
-print(f"{Discos.TipoSoporte.desdeCadena("DIGITAL").value=}")
-
-dds = Discos.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
+dds = Administrador.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
 for dd in dds:
 
     print(dd.tabla)
     print(dd.id)
-    print(dd.tipo.haciaCadena())
-

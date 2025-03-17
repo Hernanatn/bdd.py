@@ -8,7 +8,7 @@ class ProtocoloBaseDeDatos(Protocol):
     def DESCRIBE(self: Self, tabla :str) -> Self: ...
     def SELECT(self : Self, tabla : str, columnas : list[str], columnasSecundarias: Optional[dict[str, list[str]] ] = {}) -> Self:...
     def DELETE(self : Self, tabla : str) -> Self: ...
-    def INSET(self : Self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: ...
+    def INSERT(self : Self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: ...
     def UPDATE(self : Self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: ...
     def WHERE(self : Self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]) -> Self: ...
     def JOIN(self : Self,   tablaSecundaria, columnaPrincipal, columnaSecundaria, tipoUnion : TipoUnion = TipoUnion.INNER) -> Self: ...
@@ -56,14 +56,14 @@ class InstruccionPrincipal():
 class Consulta():
     '''
     Clase que permite generar consultas SQL de forma programática. Las consultas se construyen concatenando
-    las clausulas principales (SELECT, DELETE, INSET, UPDATE) y las clausulas secundarias (WHERE, JOIN). Luego
+    las clausulas principales (SELECT, DELETE, INSERT, UPDATE) y las clausulas secundarias (WHERE, JOIN). Luego
     se espera que el objeto sea convertido a string para obtener la consulta SQL.
 
 
     METODOS PUBLICOS
     - SELECT(tabla : str, columnas : list[str] columnasSecundarias: Optional[Dict[str, List[str]] ] = {}) -> Self
     - DELETE(tabla : str) -> Self
-    - INSET(tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self
+    - INSERT(tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self
     - UPDATE(tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self
     - WHERE(tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]) -> Self
     - JOIN(tablaSecundaria, columnaPrincipal, columnaSecundaria, tipoUnion : TipoUnion = TipoUnion.INNER) -> Self
@@ -97,7 +97,7 @@ class Consulta():
     AND Usuarios.id = 1
     ;
 
-    > consulta = Consulta().INSET(tabla='Usuarios', nombreUsuario='Juan')
+    > consulta = Consulta().INSERT(tabla='Usuarios', nombreUsuario='Juan')
 
     > consulta = Consulta().SELECT(tabla='Usuarios', columnas=['nombreUsuario', 'correo'], columnasSecundarias={'Discos': 'autor'})
     > consulta.JOIN(tablaSecundaria='Discos', columnaPrincipal='esPremium', columnaSecundaria ='esPremium', tipoUnion=TipoUnion.INNER)
@@ -111,7 +111,7 @@ class Consulta():
     CASOS DE ERROR:
 
     La clase levanta errores de tipo ErrorMalaSintaxisSQL en los siguientes casos:
-    - Se intenta invocar una clausula principal (SELECT, DELETE, INSET, UPDATE) más de una vez.
+    - Se intenta invocar una clausula principal (SELECT, DELETE, INSERT, UPDATE) más de una vez.
     - Se intenta convertir a string sin clausula principal
     - Se intenta pedir columnas secundarias de una tabla que no ha sido unida.
 
@@ -159,7 +159,7 @@ class Consulta():
         self.__FROM(tabla)
         self.WHERE(TipoCondicion.NO_ES, id = None)
         return self
-    def INSET(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]):
+    def INSERT(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]):
         self.__tabla_principal = tabla
         self.__instruccionPrincipal.esInsert()
         self.__parametros_principales = 'INTO ' + tabla + '\n'
@@ -200,7 +200,7 @@ class Consulta():
         self.__parametros_principales += 'FROM ' + tabla + '\n'
         return self
     def __SET(self, **columnaValor : Unpack[dict[str, Any]]):
-        asignaciones = ', '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } = {self.adaptar(valor)}" for columna, valor in columnaValor.items())
+        asignaciones = '\n, '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } = {self.adaptar(valor)}" for columna, valor in columnaValor.items())
         self.__parametros_principales += f'SET {asignaciones}\n'
         return self
 
@@ -314,8 +314,8 @@ class BaseDeDatos_MySQL():
     def DELETE(self, tabla : str) -> Self: 
         self.__consulta.DELETE(tabla)
         return self
-    def INSET(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: 
-        self.__consulta.INSET(tabla, **asignaciones)
+    def INSERT(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: 
+        self.__consulta.INSERT(tabla, **asignaciones)
         return self
     def UPDATE(self, tabla : str, **asignaciones : Unpack[dict[str, Any]]) -> Self: 
         self.__consulta.UPDATE( tabla, **asignaciones)
