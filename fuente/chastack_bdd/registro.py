@@ -8,10 +8,12 @@ class Registro: ...
 class Registro:
     __slots__ = (
         '__bdd',
+        '__tabla',
         '__id',
     )
 
     __bdd : ProtocoloBaseDeDatos
+    __tabla : str
     __id : int
 
     @property
@@ -24,7 +26,7 @@ class Registro:
         return obj        
 
     @sobrecargar
-    def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict):
+    def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict, *, debug : bool =False):
         for atributo in self.__slots__:
             nombre = atributoPublico(atributo)
             valor_SQL : Any = valores.get(nombre,None)
@@ -42,9 +44,11 @@ class Registro:
                 else:
                     valor = valor_SQL
                 setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, valor)
+        self.__bdd = bdd
+        self.__id = None
 
     @sobrecargar
-    def __init__(self, bdd : ProtocoloBaseDeDatos, id : int):
+    def __init__(self, bdd : ProtocoloBaseDeDatos, id : int, *, debug : bool =False):
         resultado : Resultado
         atributos : tuple[str] = (atributoPublico(atr) for atr in self.__slots__ if atr not in ('__bdd','__tabla'))
         
@@ -59,6 +63,7 @@ class Registro:
             bdd,
             resultado
         )
+        self.__bdd = bdd
         self.__id = id
 
     def guardar(self) -> int:
@@ -119,3 +124,36 @@ class Registro:
                 .UPDATE(self.tabla,**ediciones)\
                 .WHERE(id=self.__id)\
                 .ejecutar()
+
+    @classmethod
+    def devolverRegistros(
+        cls,
+        bdd : ProtocoloBaseDeDatos,
+        *,
+        cantidad : Optional[int] = None,
+        indice : Optional[int] = None,
+        ordenarPor : Optional[tuple[str] | str] = None,
+        filtrosJoin : dict[str,str] = None,
+        **condiciones) -> tuple[Registro]:
+
+        resultados : tuple[Resultado]
+        atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
+        
+        cantidad = cantidad if cantidad else 2000
+        desplazamiento = indice*cantidad if indice else 0
+
+        bdd\
+        .SELECT(cls.__name__, atributos)\
+        .WHERE(TipoCondicion.IGUAL,**condiciones)\
+        .LIMIT(desplazamiento,cantidad) #HACER: agregar ORDER_BY
+
+        with bdd as bdd:
+            resultados = bdd\
+                        .ejecutar()\
+                        .devolverResultados()
+        registros = []
+        if resultados:
+            for resultado in resultados:
+                registros.append(cls(bdd, resultado))
+
+        return tuple(registros)
