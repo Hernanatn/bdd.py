@@ -130,22 +130,22 @@ class Registro:
         cls,
         bdd : ProtocoloBaseDeDatos,
         *,
-        cantidad : Optional[int] = None,
-        indice : Optional[int] = None,
-        ordenarPor : Optional[tuple[str] | str] = None,
+        cantidad : Optional[int] = 1000,
+        indice : Optional[int] = 0,
+        orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
         filtrosJoin : dict[str,str] = None,
         **condiciones) -> tuple[Registro]:
 
         resultados : tuple[Resultado]
         atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
         
-        cantidad = cantidad if cantidad else 2000
-        desplazamiento = indice*cantidad if indice else 0
+        desplazamiento = indice*cantidad 
 
         bdd\
         .SELECT(cls.__name__, atributos)\
         .WHERE(TipoCondicion.IGUAL,**condiciones)\
-        .LIMIT(desplazamiento,cantidad) #HACER: agregar ORDER_BY
+        .ORDER_BY(orden)\
+        .LIMIT(desplazamiento,cantidad)
 
         with bdd as bdd:
             resultados = bdd\

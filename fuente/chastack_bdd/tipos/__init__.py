@@ -10,15 +10,22 @@ Resultado : TypeAlias = dict[str,Any]
 
 class TipoCondicion:
     IGUAL = '='
+    PARECIDO = 'LIKE'
     DIFERENTE = '!='
     MAYOR = '>'
     MENOR = '<'
     MAYOR_O_IGUAL = '>='
     MENOR_O_IGUAL = '<='
+    ES = 'IS'
     NO_ES = 'IS NOT'
 
-class TipoUnion:
-    INNER = 'INNER'
-    LEFT  = 'LEFT'
-    RIGHT = 'RIGHT'
-    FULL  = 'FULL'
+class TipoUnion(EnumSQL):
+    INNER = 1
+    OUTER = 2
+    LEFT  = 3
+    RIGHT = 4
+    FULL  = 5
+
+class TipoOrden(EnumSQL):
+    ASC = 1
+    DESC  = 2
