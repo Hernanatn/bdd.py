@@ -1,0 +1,3 @@
+sobrecargar
+solteron
+mysql-connector-python
