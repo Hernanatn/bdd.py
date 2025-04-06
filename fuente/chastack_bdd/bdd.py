@@ -50,7 +50,7 @@ class InstruccionPrincipal():
         if not self.__instruccion: raise ErrorMalaSintaxisSQL("No se ha definido una clausula principal.")
         if self.__instruccion == 'INSERT':
             if condicion or union or limite: raise ErrorMalaSintaxisSQL("Las instrucciones INSERT no pueden tener clausulas WHERE, JOIN o LIMIT.")
-        return self.__instruccion + '\n' + parametrosPrincipales + condicion + union + orden + limite + ';'
+        return self.__instruccion + '\n' + parametrosPrincipales + union + condicion + orden + limite + ';'
 
 
 class Consulta():
