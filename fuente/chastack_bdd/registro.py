@@ -1,6 +1,6 @@
-from bdd.tipos import *
-from bdd.utiles import *
-from bdd.bdd import ProtocoloBaseDeDatos
+from chastack_bdd.tipos import *
+from chastack_bdd.utiles import *
+from chastack_bdd.bdd import ProtocoloBaseDeDatos
 
 
 
@@ -8,10 +8,12 @@ class Registro: ...
 class Registro:
     __slots__ = (
         '__bdd',
+        '__tabla',
         '__id',
     )
 
     __bdd : ProtocoloBaseDeDatos
+    __tabla : str
     __id : int
 
     @property
@@ -24,14 +26,16 @@ class Registro:
         return obj        
 
     @sobrecargar
-    def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict):
+    def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict, *, debug : bool =False):
         for atributo in self.__slots__:
             nombre = atributoPublico(atributo)
             valor_SQL : Any = valores.get(nombre,None)
             if valor_SQL is not None:
                 valor = valor_SQL
                 tipo_esperado : type = self.__class__.__annotations__[atributo]
-                if issubclass(tipo_esperado, Decimal):
+                if isinstance(valor_SQL,tipo_esperado):
+                    valor = valor_SQL
+                elif issubclass(tipo_esperado, Decimal):
                     valor : Decimal = Decimal(valor_SQL)
                 elif issubclass(tipo_esperado, dict):
                     valor : dict = loads(valor_SQL)
@@ -42,24 +46,28 @@ class Registro:
                 else:
                     valor = valor_SQL
                 setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, valor)
+            else:
+                setattr(self, atributoPrivado(self,atributo) if '__' in atributo else atributo, None)
+        self.__bdd = bdd
+        self.__id = getattr(self,atributoPrivado(self,'id')) if hasattr(self,atributoPrivado(self,'id')) else None  
 
     @sobrecargar
-    def __init__(self, bdd : ProtocoloBaseDeDatos, id : int):
+    def __init__(self, bdd : ProtocoloBaseDeDatos, id : int, *, debug : bool =False):
         resultado : Resultado
         atributos : tuple[str] = (atributoPublico(atr) for atr in self.__slots__ if atr not in ('__bdd','__tabla'))
         
         with bdd as bdd:
             resultado = bdd\
-                        .SELECT(*atributos)\
-                        .FROM(self.tabla)\
+                        .SELECT(self.tabla,atributos)\
                         .WHERE(id=id)\
-                        .Ejecutar()\
-                        .DevolverUnResultado()
+                        .ejecutar()\
+                        .devolverUnResultado()
 
         self.__init__(
             bdd,
             resultado
         )
+        self.__bdd = bdd
         self.__id = id
 
     def guardar(self) -> int:
@@ -95,11 +103,9 @@ class Registro:
     
         with self.__bdd as bdd:
             id : int = bdd\
-                        .UPDATE(self.tabla)\
-                        .SET(**ediciones)\
-                        .WHERE(id=self.__id)\
-                        .Ejecutar()\
-                        .DevolverIdUltimaInsercion()
+                        .INSERT(self.tabla,**ediciones)\
+                        .ejecutar()\
+                        .devolverIdUltimaInsercion()
             self.__id = id
         
         return self.__id
@@ -118,7 +124,39 @@ class Registro:
 
         with self.__bdd as bdd:
             bdd\
-                .UPDATE(self.tabla)\
-                .SET(**ediciones)\
+                .UPDATE(self.tabla,**ediciones)\
                 .WHERE(id=self.__id)\
-                .Ejecutar()
+                .ejecutar()
+
+    @classmethod
+    def devolverRegistros(
+        cls,
+        bdd : ProtocoloBaseDeDatos,
+        *,
+        cantidad : Optional[int] = 1000,
+        indice : Optional[int] = 0,
+        orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
+        filtrosJoin : dict[str,str] = None,
+        **condiciones) -> tuple[Registro]:
+
+        resultados : tuple[Resultado]
+        atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
+        
+        desplazamiento = indice*cantidad 
+
+        bdd\
+        .SELECT(cls.__name__, atributos)\
+        .WHERE(TipoCondicion.IGUAL,**condiciones)\
+        .ORDER_BY(orden)\
+        .LIMIT(desplazamiento,cantidad)
+
+        with bdd as bdd:
+            resultados = bdd\
+                        .ejecutar()\
+                        .devolverResultados()
+        registros = []
+        if resultados:
+            for resultado in resultados:
+                registros.append(cls(bdd, resultado))
+
+        return tuple(registros)

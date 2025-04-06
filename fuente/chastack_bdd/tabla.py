@@ -1,7 +1,7 @@
-from bdd.tipos import *
-from bdd.utiles import *
-from bdd.bdd import ProtocoloBaseDeDatos
-from bdd.registro import Registro
+from chastack_bdd.tipos import *
+from chastack_bdd.utiles import *
+from chastack_bdd.bdd import ProtocoloBaseDeDatos
+from chastack_bdd.registro import Registro
 
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
@@ -19,41 +19,49 @@ class Tabla(type):
         
         return cls
 
-    def __init__(cls, nombre, bases, atributos): ...
-        #print(cls.__slots__)
+    def __init__(cls, nombre, ancestros, diccionario):
+        cls.__INICIALIZADA = False
+        cls.__DEBUG = False
 
-    def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales):
 
-
-        slots :list[str] = []        
-        anotaciones : dict[str,type] = {}
-        with bdd as bdd:
-            resultados = bdd.DESCRIBE(cls.__tabla).Ejecutar().DevolverResultados()
-            
-            for columna in resultados:
-                nombre_campo = columna.get('Field')
-                es_clave = columna.get('Key') == "PRI"
-                #print(columna.get('Extra'))
-                es_auto = "auto_increment" in columna.get("Extra", "").lower() or "default_generated" in columna.get("Extra", "").lower() or "auto_generated" in columna.get("Extra", "").lower()
+    def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales): 
+        if nominales and nominales.get("debug", False):
+            cls.__DEBUG = True
+        debug = lambda msj: print(f"[DEBUG] {msj}") if cls.__DEBUG else lambda msj: None
+        debug(f"{posicionales}, {nominales}")
+        debug(f"Se llamó a la clase {cls}. Instanciando objeto.")
+        debug(f"{cls} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
+        if not cls.__INICIALIZADA: 
+            slots :list[str] = []        
+            anotaciones : dict[str,type] = {}
+            with bdd as bdd:
+                resultados = bdd.DESCRIBE(cls.__tabla).ejecutar().devolverResultados()
                 
-                nombre_attr = f"__{nombre_campo}" if es_clave or es_auto else nombre_campo
-                
-                tipo = cls.__resolverTipo(columna.get('Type'), nombre_campo)
-                
-                if nombre_attr not in cls.__slots__:
-                    slots.append(nombre_attr)
-                anotaciones.update({
-                    nombre_attr : tipo
-                })
-                
-                
-                if es_clave:
-                    setattr(cls, nombre_campo, property(lambda self, name=nombre_campo: getattr(self, atributoPrivado(self,name))))
+                debug(f"Inicializando modelo para: {cls.__tabla}.")
+                for columna in resultados:
+                    nombre_campo = columna.get('Field')
+                    es_clave = columna.get('Key') == "PRI"
+                    es_auto = "auto_increment" in columna.get("Extra", "").lower() or "default_generated" in columna.get("Extra", "").lower() or "auto_generated" in columna.get("Extra", "").lower()
+                    
+                    nombre_attr = f"__{nombre_campo}" if es_clave or es_auto else nombre_campo
+                    
+                    tipo = cls.__resolverTipo(columna.get('Type'), nombre_campo)
+                    debug(f"| {str(nombre_campo):<40} | {str(columna.get('Type','')):<40} | {str(tipo):<40}")
+                    
+                    if nombre_attr not in cls.__slots__:
+                        slots.append(nombre_attr)
+                    anotaciones.update({
+                        nombre_attr : tipo
+                    })
+                    
+                    
+                    if es_clave:
+                        setattr(cls, nombre_campo, property(lambda self, name=nombre_campo: getattr(self, atributoPrivado(self,name))))
         
+            cls.__slots__ = cls.__slots__ + tuple(slots)
+            cls.__annotations__.update(anotaciones)
+            cls.__INICIALIZADA = True
         
-        cls.__slots__ = cls.__slots__ + tuple(slots)
-        cls.__annotations__.update(anotaciones)
-        print(cls.__slots__)
         instancia = super().__call__(bdd, *posicionales, **nominales)
         setattr(instancia, atributoPrivado(instancia,"__bdd"),bdd)
         return instancia
@@ -101,14 +109,15 @@ class Tabla(type):
             'boolean': bool,
             'bool': bool,
             'tinyint(1)': bool,
-            'blob': bytes,
-            'mediumblob': bytes,
-            'longblob': bytes,
-            'tinyblob': bytes,
-            'binary': bytes,
-            'varbinary': bytes,
+            'blob': bytearray,
+            'mediumblob': bytearray,
+            'longblob': bytearray,
+            'tinyblob': bytearray,
+            'binary': bytearray,
+            'varbinary': bytearray,
             'json': dict,
         }
+
         
         if tipo_base == 'enum':
             valores_enum: list[Any] = findall(r"'([^']*)'", tipo_sql)
