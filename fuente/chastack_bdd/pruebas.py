@@ -20,18 +20,21 @@ config = ConfigMySQL(
     )
 bdd = BaseDeDatos_MySQL(config)
 
-from datetime import datetime
-u = datetime.now().microsecond
-admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario=f"admin{u}",contrasena="admin1234".encode('utf-8'),correo=f"admin{u}@fundacionzaffaroni.ar"))
-admin1.guardar()
-
-admin1 = Administrador(bdd=bdd,id=10)
-print(Administrador)
-print(admin1)
 
 
 dds = Administrador.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
 for dd in dds:
-
+    print(dd)
+    print(dd.nombre_usuario)
+    print(dd.__slots__)
     print(dd.tabla)
-    print(dd.id)
+
+from datetime import datetime
+u = datetime.now().microsecond
+admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario=f"admin{u}",contrasena="admin1234".encode('utf-8'),correo=f"admin{u}@fundacionzaffaroni.ar"))
+admin1.guardar()
+print(Administrador)
+print(admin1.id)
+
+admin10 = Administrador(bdd=bdd,id=10)
+print(admin10)

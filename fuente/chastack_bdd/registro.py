@@ -15,14 +15,11 @@ class Registro:
     __bdd : ProtocoloBaseDeDatos
     __tabla : str
     __id : int
-
-    @property
-    def id(self):
-        return self.__id
     
     def __new__(cls, *posicionales,**nominales):
         obj = super(Registro, cls).__new__(cls)
         obj.__tabla = cls.__name__
+        asignarAtributoPrivado(obj, '__tabla', cls.__name__)
         return obj        
 
     @sobrecargar
@@ -106,8 +103,10 @@ class Registro:
                         .INSERT(self.tabla,**ediciones)\
                         .ejecutar()\
                         .devolverIdUltimaInsercion()
-            self.__id = id
-        
+            asignarAtributoPrivado(self,'id',id)
+            asignarAtributoPrivado(self,'fecha_carga', datetime.now())
+            asignarAtributoPrivado(self,'fecha_modificacion', datetime.now())
+
         return self.__id
     
     def __editar(self) -> None: 
@@ -138,7 +137,7 @@ class Registro:
         orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
         filtrosJoin : dict[str,str] = None,
         **condiciones) -> tuple[Registro]:
-
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
         resultados : tuple[Resultado]
         atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
         
@@ -177,13 +176,13 @@ class Registro:
     def __str__(self) -> str:
         filas = tuple(self.__iter__())      
         if not filas:
-            return f"{self.__tabla}\n(vacío)"
+            return f"<Registro {self.__tabla}> (vacío)"
         ll_max, v_max = max([len(str(ll)) for ll, _ in filas] + [len("fecha_modificacion"), len(f"{self.__tabla} #{self.id}" )]), max([len(str(v)) for _, v in filas] + [len("0000-00-00 00:00:00")])
         tabla_str = f"┌{'─' * (ll_max + 2)}┐\n" \
                     + f"│ {self.__tabla:<{ll_max - len(str(self.id)) - 2}} #{self.id} │ Registro\n" \
                     + f"├{'─' * (ll_max + 2)}┼{'─' * (v_max + 2)}┐\n" \
-                    + f"│ {"fecha_carga":<{ll_max}} │ {str(getattr(self,atributoPrivado(self,"fecha_carga"))):<{v_max}} │\n"  \
-                    + f"│ {"fecha_modificacion":<{ll_max}} │ {str(getattr(self,atributoPrivado(self,"fecha_modificacion"))):<{v_max}} │\n"  \
+                    + f"│ {"fecha_carga":<{ll_max}} │ {str(devolverAtributoPrivado(self,'fecha_carga')):<{v_max}} │\n"  \
+                    + f"│ {"fecha_modificacion":<{ll_max}} │ {str(devolverAtributoPrivado(self,'fecha_modificacion')):<{v_max}} │\n"  \
                     + f"├{'─' * (ll_max + 2)}┼{'─' * (v_max + 2)}┤\n" \
                     + "\n".join(f"│ {str(ll):<{ll_max}} │ {str(v):<{v_max}} │" for ll, v in filas) \
                     + f"\n└{'─' * (ll_max + 2)}┴{'─' * (v_max + 2)}┘" \
@@ -192,7 +191,7 @@ class Registro:
 
     def __iter__(self):
         return iter({
-            atributo : getattr(self, atributoPrivado(atributo) if '__' in atributo else atributo)
+            atributo : devolverAtributo(self,atributo)
                 for atributo in (
                     atr for atr in self.__slots__ if '__' not in atr
                 )

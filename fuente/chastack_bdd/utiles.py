@@ -4,7 +4,6 @@ from solteron import Solteron
 from sobrecargar import sobrecargar
 from secrets import token_urlsafe
 from re import findall,match
-
 def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
     """
     Formatea un valor de Python a una representación adecuada para SQL.
@@ -32,8 +31,20 @@ def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
         
     return f"'{str(valor).replace("'", "''")}'"
 
-def atributoPublico(nombreAtributo: str) -> str:
-    return nombreAtributo.replace('__','',1)
+def atributoPublico(nombre_atributo: str) -> str:
+    return nombre_atributo.replace('__','',1)
 
-def atributoPrivado(obj: Any, nombreAtributo: str) -> str:
-    return f"_{obj.__class__.__name__}__{atributoPublico(nombreAtributo)}"
+def atributoPrivado(obj: Any, nombre_atributo: str) -> str:
+    return f"_{obj.__class__.__name__}__{atributoPublico(nombre_atributo)}"
+
+def tieneAtributoPrivado(obj: Any, nombre_atributo: str) -> bool:
+    return hasattr(obj,atributoPrivado(obj,nombre_atributo))
+
+def devolverAtributoPrivado(obj: Any, nombre_atributo: str, por_defecto = None) -> Any:
+    return getattr(obj,atributoPrivado(obj,nombre_atributo), por_defecto)
+
+def asignarAtributoPrivado(obj: Any, nombre_atributo: str, valor) -> None:
+    setattr(obj,atributoPrivado(obj,nombre_atributo), valor)
+
+def devolverAtributo(obj: Any, nombre_atributo: str, por_defecto = None) -> Any:
+    return getattr(obj,atributoPrivado(obj,nombre_atributo) if '__' in nombre_atributo else nombre_atributo, por_defecto)

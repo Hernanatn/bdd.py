@@ -19,7 +19,7 @@ class ProtocoloBaseDeDatos(Protocol):
     def ejecutar(self: Self) -> Self :...
     def devolverUnResultado(self: Self) -> Resultado :...
     def devolverResultados(self: Self) -> tuple[Resultado] :...
-    def devolverIdUltimaInsercion(self:Self) -> int :...
+    def devolverIdUltimaInsercion(self:Self) -> Optional[int] :...
 
 class InstruccionPrincipal():
     ''' 
@@ -378,7 +378,7 @@ class BaseDeDatos_MySQL():
         self.__consulta.reiniciar()
         return self
    
-    def devolverIdUltimaInsercion(self) -> Optional[int]:
+    def devolverIdUltimaInsercion(self : Self) -> Optional[int]:
         return self.__cursor.lastrowid
         
     def devolverResultados(self, cantidad : Optional[int] = None) -> Optional[List[Dict[str, Any]]]:

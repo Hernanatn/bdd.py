@@ -10,7 +10,7 @@ class Tabla(type):
         
         cls = super().__new__(mcs, nombre, bases, atributos)
         
-        cls.__tabla = nombre
+        asignarAtributoPrivado(cls,'__tabla',nombre)
         setattr(cls, "tabla", property(lambda cls : cls.__tabla))
 
         
@@ -21,22 +21,17 @@ class Tabla(type):
 
     def __init__(cls, nombre, ancestros, diccionario):
         cls.__INICIALIZADA = False
-        cls.__DEBUG = False
+        cls.__DEBUG = lambda msj : None
 
     def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales): 
         if nominales and nominales.get("debug", False):
-            cls.__DEBUG = True
-        debug = lambda msj: print(f"[DEBUG] {msj.rstrip()}") if cls.__DEBUG else lambda msj: None
-        debug(f"Se llamó a la clase {cls.__qualname__}. Instanciando objeto.")
-        debug(f"{cls.__qualname__} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
-        if not cls.__INICIALIZADA:
-            debug(f"Inicializando modelo para: {cls.__tabla}.")
-            cls.__inicializar(bdd)
-            debug(f"---\n{cls}\n---\n")
+            cls.__DEBUG = lambda msj: print(f"[DEBUG] {msj.rstrip()}")
+        cls.__DEBUG(f"Se llamó a la clase {cls.__qualname__}. Instanciando objeto.")
+        cls.__inicializar(bdd)
 
         instancia = super().__call__(bdd, *posicionales, **nominales)
-        setattr(instancia, atributoPrivado(instancia,"__bdd"),bdd)
-        debug(f"---\n{instancia}\n---\n")
+        asignarAtributoPrivado(instancia,"__bdd",bdd)
+        cls.__DEBUG(f"---------\n{instancia}\n---------\n")
         return instancia
     
     def __str__(cls):
@@ -51,6 +46,9 @@ class Tabla(type):
                     + f"\n└{'─' * (ll_max + 2)}┴{'─' * (v_max + 2)}┴{'─' * (v_max + 2)}┘\n" 
         return tabla_str
     def __inicializar(cls,bdd):
+            cls.__DEBUG(f"{cls.__qualname__} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
+            if cls.__INICIALIZADA: return
+            cls.__DEBUG(f"Inicializando modelo para: {cls.__tabla}.")
             slots :list[str] = []        
             anotaciones : dict[str,type] = {}
             with bdd as bdd:
@@ -71,12 +69,13 @@ class Tabla(type):
                         nombre_attr : tipo
                     })
                     
-                    if es_clave:
-                        setattr(cls, nombre_campo, property(lambda self, name=nombre_campo: getattr(self, atributoPrivado(self,name))))
+                    if es_clave or es_auto:
+                        setattr(cls, nombre_campo, property(lambda self, nombre_=nombre_campo: devolverAtributoPrivado(self,nombre_)))
                     cls.__bdd = bdd
             cls.__slots__ = cls.__slots__ + tuple(slots)
             cls.__annotations__.update(anotaciones)
             cls.__INICIALIZADA = True
+            cls.__DEBUG(f"---------\n{cls}\n---------\n")
             
 
     @classmethod
