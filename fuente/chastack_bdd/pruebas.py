@@ -12,14 +12,22 @@ from chastack_bdd.registro import Registro
 class Administrador(metaclass=Tabla):
     ...
 
-
+config = ConfigMySQL(
+        "localhost", 
+        "servidor_local", 
+        "Servidor!1234", 
+        "fundacionzaffaroni_ar_desarrollo",
+    )
 bdd = BaseDeDatos_MySQL(config)
 
-admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario="admin9",contrasena="admin1234".encode('utf-8'),correo="admin9@fundacionzaffaroni.ar"))
+from datetime import datetime
+u = datetime.now().microsecond
+admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario=f"admin{u}",contrasena="admin1234".encode('utf-8'),correo=f"admin{u}@fundacionzaffaroni.ar"))
 admin1.guardar()
 
-admin1 = Administrador(bdd=bdd,id=1)
-print(admin1.correo)
+admin1 = Administrador(bdd=bdd,id=10)
+print(Administrador)
+print(admin1)
 
 
 dds = Administrador.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})

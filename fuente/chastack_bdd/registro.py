@@ -160,3 +160,40 @@ class Registro:
                 registros.append(cls(bdd, resultado))
 
         return tuple(registros)
+
+    def __cmp__(self, otro : Registro) -> int:  
+        if not isinstance(otro, type(self)): raise TypeError(f"Se esperaba {type(self)}, se obtuvo {type(otro)}")
+        if self.id == otro.id: return 0;
+        if self.fecha_carga > otro.fecha_carga: return 1;
+        return -1
+
+    def __add__(self, otro : Registro) -> tuple[Registro]: 
+        if not isinstance(otro, type(self)): raise TypeError(f"Se esperaba {type(self)}, se obtuvo {type(otro)}")
+        return (self, otro)
+
+    def __repr__(self) -> str:
+        return f"<Registro {self.__tabla}> en {id(self)}." 
+
+    def __str__(self) -> str:
+        filas = tuple(self.__iter__())      
+        if not filas:
+            return f"{self.__tabla}\n(vacío)"
+        ll_max, v_max = max([len(str(ll)) for ll, _ in filas] + [len("fecha_modificacion"), len(f"{self.__tabla} #{self.id}" )]), max([len(str(v)) for _, v in filas] + [len("0000-00-00 00:00:00")])
+        tabla_str = f"┌{'─' * (ll_max + 2)}┐\n" \
+                    + f"│ {self.__tabla:<{ll_max - len(str(self.id)) - 2}} #{self.id} │ Registro\n" \
+                    + f"├{'─' * (ll_max + 2)}┼{'─' * (v_max + 2)}┐\n" \
+                    + f"│ {"fecha_carga":<{ll_max}} │ {str(getattr(self,atributoPrivado(self,"fecha_carga"))):<{v_max}} │\n"  \
+                    + f"│ {"fecha_modificacion":<{ll_max}} │ {str(getattr(self,atributoPrivado(self,"fecha_modificacion"))):<{v_max}} │\n"  \
+                    + f"├{'─' * (ll_max + 2)}┼{'─' * (v_max + 2)}┤\n" \
+                    + "\n".join(f"│ {str(ll):<{ll_max}} │ {str(v):<{v_max}} │" for ll, v in filas) \
+                    + f"\n└{'─' * (ll_max + 2)}┴{'─' * (v_max + 2)}┘" \
+                    + "\n"
+        return tabla_str.rstrip()
+
+    def __iter__(self):
+        return iter({
+            atributo : getattr(self, atributoPrivado(atributo) if '__' in atributo else atributo)
+                for atributo in (
+                    atr for atr in self.__slots__ if '__' not in atr
+                )
+        }.items())
