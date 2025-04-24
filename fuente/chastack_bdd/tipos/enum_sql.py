@@ -1,5 +1,5 @@
 from enum import Enum, EnumType as _EnumMeta, EnumDict as _EnumDict
-from typing import Union
+from typing import Union,Any
 
 class EnumSQLMeta(_EnumMeta):
     """
