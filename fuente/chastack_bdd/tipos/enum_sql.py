@@ -1,4 +1,5 @@
 from enum import Enum, EnumType as _EnumMeta, EnumDict as _EnumDict
+from typing import Union
 
 class EnumSQLMeta(_EnumMeta):
     """
@@ -43,14 +44,17 @@ class EnumSQL(Enum,metaclass=EnumSQLMeta):
         pass
 
     @classmethod
-    def desdeCadena(cls, cadena: str) -> 'EnumSQL':
+    def desdeCadena(cls, cadena: str) -> 'EnumSQL': # HACER: (Hernán) hacer compatible con valores `str`
         return cls.__members__.get(cadena, cls._invalido)
-
+    
     def haciaCadena(self) -> str:
-        return self.name
+        return self.value if isinstance(self.value, str) else self.name
 
     def __str__(self) -> str:
         return self.haciaCadena()
 
     def __repr__(self) -> str:
-        return self.haciaCadena()
+        return f"<EnumSQL> {type(self).__name__}.{self.name} = {self.value}"
+
+    def __eq__(self, otro : Union[EnumSQL,int,str,Any]) -> bool:
+        return (self.name == otro.name and self.value == otro.value) if isinstance(otro,type(self)) else self.value == otro if isinstance(otro,int) else (self.name == otro or self.value == otro) 

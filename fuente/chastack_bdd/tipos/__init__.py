@@ -29,3 +29,11 @@ class TipoUnion(EnumSQL):
 class TipoOrden(EnumSQL):
     ASC = 1
     DESC  = 2
+
+class ArgumentoURL(EnumSQL):
+    ORDENAR_POR = "ordenarPor"
+    TIPO_ORDEN = "tipoOrden"
+    BUSCAR = "buscar"
+    ID = "idx"
+    NUMERO_PAGINA = "pag"
+

@@ -32,9 +32,9 @@ for dd in dds:
 from datetime import datetime
 u = datetime.now().microsecond
 admin1 = Administrador(bdd, dict(nombre="Admin",nombre_usuario=f"admin{u}",contrasena="admin1234".encode('utf-8'),correo=f"admin{u}@fundacionzaffaroni.ar"))
-admin1.guardar()
+#admin1.guardar()
 print(Administrador)
 print(admin1.id)
 
-admin10 = Administrador(bdd=bdd,id=10)
-print(admin10)
+#admin10 = Administrador(bdd=bdd,id=81)
+#print(admin10)
