@@ -16,3 +16,7 @@ chastack_bdd.egg-info/top_level.txt
 chastack_bdd/errores/__init__.py
 chastack_bdd/tipos/__init__.py
 chastack_bdd/tipos/enum_sql.py
+chastack_bdd/tipos/unico_sql.py
+chastack_bdd/usuario/__init__.py
+chastack_bdd/usuario/errores.py
+chastack_bdd/usuario/usuario.py

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: chastack-bdd
-Version: 0.5.2
+Version: 0.6.0
 Summary: Abstracción de Bases de Datos en Python y constructor de modelos.
 Home-page: https://github.com/Hernanatn/bdd.py
 Author: Hernán A. Teszkiewicz Novick
