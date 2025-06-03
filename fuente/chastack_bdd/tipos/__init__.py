@@ -1,9 +1,10 @@
-from typing import Protocol, runtime_checkable, Self, TypeAlias, Optional, Any, AnyStr, Unpack,Union,Dict,List, get_origin
+from typing import Protocol, runtime_checkable, Self, TypeAlias, Optional, Any, AnyStr, Unpack,Union,Dict,List, get_origin, Collection, TypeVar, Generic
 from decimal import Decimal
 from datetime import datetime,date,time,timedelta,timezone
 from re import Match
 
 from chastack_bdd.tipos.enum_sql import *
+from chastack_bdd.tipos.unico_sql import *
 from solteron import Solteron
 ### BDD
 Resultado : TypeAlias = dict[str,Any]
