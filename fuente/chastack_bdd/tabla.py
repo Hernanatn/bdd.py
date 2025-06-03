@@ -5,10 +5,11 @@ from chastack_bdd.registro import Registro
 
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
-        if Registro not in bases and nombre != 'Registro':
-            bases = (Registro,) + bases
+        bases_ext = bases
+        if not any(issubclass(base, Registro) for base in bases):
+            bases_ext = (Registro,) + bases
         
-        cls = super().__new__(mcs, nombre, bases, atributos)
+        cls = super().__new__(mcs, nombre, bases_ext, atributos)
         
         asignarAtributoPrivado(cls,'__tabla',nombre)
         setattr(cls, "tabla", property(lambda cls : cls.__tabla))
@@ -125,8 +126,8 @@ class Tabla(type):
             'mediumblob': bytearray,
             'longblob': bytearray,
             'tinyblob': bytearray,
-            'binary': bytearray,
-            'varbinary': bytearray,
+            'binary': bytes,
+            'varbinary': bytes,
             'json': dict,
         }
 
@@ -169,11 +170,12 @@ class Tabla(type):
             int: 'int',
             float: 'double',
             Decimal: 'decimal(10,2)',
-            datetime: 'datetime',
+            datetime: 'timestamp',
             date: 'date',
             time: 'time',
             str: 'varchar(255)',
             bool: 'tinyint(1)',
+            bytes: 'varbinary(255)',
             bytearray: 'blob',
             dict: 'json',
         }
@@ -183,4 +185,4 @@ class Tabla(type):
             valores = [f"'{e.name}'" for e in tipo_python if e.name != '_invalido']
             return f"enum({','.join(valores)})"
 
-        return tipos_inversos.get(tipo_python, 'text')
+        return tipos_inversos.get(tipo_python, 'text').upper()

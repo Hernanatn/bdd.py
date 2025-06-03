@@ -3,7 +3,44 @@ from chastack_bdd.tipos import *
 from solteron import Solteron
 from sobrecargar import sobrecargar
 from secrets import token_urlsafe
-from re import findall,match
+from re import findall,match,sub
+from typing import get_type_hints, get_origin, get_args
+
+
+def tipoSQLDesdePython(tipo_python: type) -> str:
+    """
+    Devuelve el tipo SQL correspondiente a un tipo de Python.
+    Si el tipo es un Enum generado por __resolverTipo, intenta reconstruir el ENUM SQL.
+    
+    Parámetros:
+        :arg tipo_python type: el tipo de Python (p. ej., int, str, Enum, etc.)
+
+    Devuelve:
+        :arg str: el tipo SQL correspondiente
+    """
+    tipos: dict[type, str] = {
+        int: 'int',
+        float: 'double',
+        Decimal: 'decimal(10,2)',
+        datetime: 'datetime',
+        date: 'date',
+        time: 'time',
+        str: 'varchar(255)',
+        bool: 'tinyint(1)',
+        bytes: 'varbinary(255)',
+        bytearray: 'blob',
+        dict: 'json',
+    }
+
+    # Enums definidos dinámicamente por Tabla.__resolverTipo
+    if isinstance(tipo_python, type) and issubclass(tipo_python, EnumSQL):
+        valores = [f"'{e.name}'" for e in tipo_python if e.name != '_invalido']
+        return f"enum({','.join(valores)})"
+
+    
+
+    return tipos.get(tipo_python, 'text')
+
 def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
     """
     Formatea un valor de Python a una representación adecuada para SQL.
@@ -31,14 +68,41 @@ def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
         
     return f"'{str(valor).replace("'", "''")}'"
 
+def esSubclaseUnion(cls: type, clase_objetivo: Union[type, tuple[Union[type, tuple[Any, ...]], ...]], /) -> bool:
+    """Devuelve True si cls es (o contiene) una subclase de objetivo"""
+    origen = get_origin(cls)
+    argumentos = get_args(cls)
+
+    if origen is Union:
+        return any(
+            isinstance(arg, type) and issubclass(arg, clase_objetivo)
+            for arg in argumentos if arg is not type(None)
+        )
+    return isinstance(cls, type) and issubclass(cls, clase_objetivo)
+
+def desenvolverTipo(tipo : Union[type, Any]):
+    if isinstance(tipo, type):
+        return tipo
+    
+    origen = get_origin(tipo)
+    argumentos = get_args(tipo)
+    #print("\n###########################2\n",tipo, origen, argumentos,"\n###########################\n")
+    if origen is Union:
+        for arg in argumentos:
+            if isinstance(arg,type):
+                return arg
+
 def atributoPublico(nombre_atributo: str) -> str:
-    return nombre_atributo.replace('__','',1)
+    return f"{sub("_.*__","",nombre_atributo)}".replace("__","",1)
 
 def atributoPrivado(obj: Any, nombre_atributo: str) -> str:
     return f"_{obj.__class__.__name__}__{atributoPublico(nombre_atributo)}"
 
 def tieneAtributoPrivado(obj: Any, nombre_atributo: str) -> bool:
     return hasattr(obj,atributoPrivado(obj,nombre_atributo))
+
+def tieneAtributo(obj: Any, nombre_atributo: str) -> bool:
+    return hasattr(obj,nombre_atributo) or tieneAtributoPrivado(obj,nombre_atributo)
 
 def devolverAtributoPrivado(obj: Any, nombre_atributo: str, por_defecto = None) -> Any:
     return getattr(obj,atributoPrivado(obj,nombre_atributo), por_defecto)
