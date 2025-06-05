@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: chastack-bdd
-Version: 0.3.5
+Version: 0.6.0
 Summary: Abstracción de Bases de Datos en Python y constructor de modelos.
 Home-page: https://github.com/Hernanatn/bdd.py
 Author: Hernán A. Teszkiewicz Novick
@@ -14,16 +14,17 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: sobrecargar
 Requires-Dist: solteron
-Requires-Dist: mysql-connector-python
+Requires-Dist: mysql-connector-python<9.2.1,>=8.2.0
 Dynamic: author
 Dynamic: home-page
+Dynamic: license-file
 
 
 
 # BDD
 
 [![Hecho por Chaska](https://img.shields.io/badge/hecho_por-Ch'aska-303030.svg)](https://cajadeideas.ar)
-[![Versión: 0.1.0](https://img.shields.io/badge/version-v0.1.0-green.svg)](https://github.com/hernanatn/github.com/hernanatn/bdd.py/releases/latest)
+[![Versión: 0.5.2](https://img.shields.io/badge/version-v0.5.2-green.svg)](https://github.com/hernanatn/github.com/hernanatn/bdd.py/releases/latest)
 [![Verisón de Python: 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://www.python.org/downloads/release/python-3120/)
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-lightgrey.svg)](LICENSE)
 

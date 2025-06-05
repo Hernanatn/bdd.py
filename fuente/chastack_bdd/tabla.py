@@ -5,12 +5,13 @@ from chastack_bdd.registro import Registro
 
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
-        if Registro not in bases and nombre != 'Registro':
-            bases = (Registro,) + bases
+        bases_ext = bases
+        if not any(issubclass(base, Registro) for base in bases):
+            bases_ext = (Registro,) + bases
         
-        cls = super().__new__(mcs, nombre, bases, atributos)
+        cls = super().__new__(mcs, nombre, bases_ext, atributos)
         
-        cls.__tabla = nombre
+        asignarAtributoPrivado(cls,'__tabla',nombre)
         setattr(cls, "tabla", property(lambda cls : cls.__tabla))
 
         
@@ -21,23 +22,39 @@ class Tabla(type):
 
     def __init__(cls, nombre, ancestros, diccionario):
         cls.__INICIALIZADA = False
-        cls.__DEBUG = False
-
+        cls.__DEBUG = lambda msj : None
 
     def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales): 
         if nominales and nominales.get("debug", False):
-            cls.__DEBUG = True
-        debug = lambda msj: print(f"[DEBUG] {msj}") if cls.__DEBUG else lambda msj: None
-        debug(f"{posicionales}, {nominales}")
-        debug(f"Se llamó a la clase {cls}. Instanciando objeto.")
-        debug(f"{cls} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
+            cls.__DEBUG = lambda msj: print(f"[DEBUG] {msj.rstrip()}")
+        cls.__DEBUG(f"Se llamó a la clase {cls.__qualname__}. Instanciando objeto.")
+        cls.__inicializar(bdd)
+
+        instancia = super().__call__(bdd, *posicionales, **nominales)
+        asignarAtributoPrivado(instancia,"__bdd",bdd)
+        cls.__DEBUG(f"---------\n{instancia}\n---------\n")
+        return instancia
+    
+    def __str__(cls):
         if not cls.__INICIALIZADA: 
+            return f"<Tabla {cls.__name__}>"
+        filas = {atributoPublico(ll) : v for ll,v in cls.__annotations__.items()}      
+        ll_max, v_max = max(len(str(ll)) for ll, _ in filas.items() ), max(len(str(v)) for _, v in filas.items() )
+        tabla_str = f"┌{'─' * (ll_max + 2)}┐\n" \
+                    + f"│ {cls.__name__:<{ll_max}} │\n" \
+                    + f"├{'─' * (ll_max + 2)}┼{'─' * (v_max + 2)}┬{'─' * (v_max + 2)}┐\n" \
+                    + "\n".join(f"│ {str(ll):<{ll_max}} │ {str(v):<{v_max}} │ {str(cls.__tipoSQLDesdePython(v)):<{v_max}} │" for ll, v in filas.items()) \
+                    + f"\n└{'─' * (ll_max + 2)}┴{'─' * (v_max + 2)}┴{'─' * (v_max + 2)}┘\n" 
+        return tabla_str
+    def __inicializar(cls,bdd):
+            cls.__DEBUG(f"{cls.__qualname__} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
+            if cls.__INICIALIZADA: return
+            cls.__DEBUG(f"Inicializando modelo para: {cls.__tabla}.")
             slots :list[str] = []        
             anotaciones : dict[str,type] = {}
             with bdd as bdd:
                 resultados = bdd.DESCRIBE(cls.__tabla).ejecutar().devolverResultados()
-                
-                debug(f"Inicializando modelo para: {cls.__tabla}.")
+            
                 for columna in resultados:
                     nombre_campo = columna.get('Field')
                     es_clave = columna.get('Key') == "PRI"
@@ -46,7 +63,6 @@ class Tabla(type):
                     nombre_attr = f"__{nombre_campo}" if es_clave or es_auto else nombre_campo
                     
                     tipo = cls.__resolverTipo(columna.get('Type'), nombre_campo)
-                    debug(f"| {str(nombre_campo):<40} | {str(columna.get('Type','')):<40} | {str(tipo):<40}")
                     
                     if nombre_attr not in cls.__slots__:
                         slots.append(nombre_attr)
@@ -54,18 +70,15 @@ class Tabla(type):
                         nombre_attr : tipo
                     })
                     
-                    
-                    if es_clave:
-                        setattr(cls, nombre_campo, property(lambda self, name=nombre_campo: getattr(self, atributoPrivado(self,name))))
-        
+                    if es_clave or es_auto:
+                        setattr(cls, nombre_campo, property(lambda self, nombre_=nombre_campo: devolverAtributoPrivado(self,nombre_)))
+                    cls.__bdd = bdd
             cls.__slots__ = cls.__slots__ + tuple(slots)
             cls.__annotations__.update(anotaciones)
             cls.__INICIALIZADA = True
-        
-        instancia = super().__call__(bdd, *posicionales, **nominales)
-        setattr(instancia, atributoPrivado(instancia,"__bdd"),bdd)
-        return instancia
-    
+            cls.__DEBUG(f"---------\n{cls}\n---------\n")
+            
+
     @classmethod
     def __resolverTipo(cls, tipo_sql: str, nombre_columna: Optional[str]) -> type:
         """
@@ -113,8 +126,8 @@ class Tabla(type):
             'mediumblob': bytearray,
             'longblob': bytearray,
             'tinyblob': bytearray,
-            'binary': bytearray,
-            'varbinary': bytearray,
+            'binary': bytes,
+            'varbinary': bytes,
             'json': dict,
         }
 
@@ -139,3 +152,37 @@ class Tabla(type):
         if tipo_completo in tipos:
             return tipos[tipo_completo]
         return tipos.get(tipo_base, Any)
+
+    @classmethod
+    def __tipoSQLDesdePython(cls, tipo_python: type) -> str:
+        """
+        Devuelve el tipo SQL correspondiente a un tipo de Python.
+        Si el tipo es un Enum generado por __resolverTipo, intenta reconstruir el ENUM SQL.
+        
+        Parámetros:
+            :arg tipo_python type: el tipo de Python (p. ej., int, str, Enum, etc.)
+
+        Devuelve:
+            :arg str: el tipo SQL correspondiente
+        """
+        # Mapeo inverso de tipos básicos
+        tipos_inversos: dict[type, str] = {
+            int: 'int',
+            float: 'double',
+            Decimal: 'decimal(10,2)',
+            datetime: 'timestamp',
+            date: 'date',
+            time: 'time',
+            str: 'varchar(255)',
+            bool: 'tinyint(1)',
+            bytes: 'varbinary(255)',
+            bytearray: 'blob',
+            dict: 'json',
+        }
+
+        # Enums definidos dinámicamente por __resolverTipo
+        if isinstance(tipo_python, type) and issubclass(tipo_python, EnumSQL):
+            valores = [f"'{e.name}'" for e in tipo_python if e.name != '_invalido']
+            return f"enum({','.join(valores)})"
+
+        return tipos_inversos.get(tipo_python, 'text').upper()
