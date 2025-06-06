@@ -224,20 +224,26 @@ class Registro:
 
    
     def añadirRelacion(self, registro, tabla):
+        '''Agrega una relación entre el registro actual y otro registro de la tabla especificada.'''
         self.muchosAMuchos[tabla][registro.id] = registro
     def obtenerMuchos(self, tabla ):
+        '''Devuelve un diccionario con los registros relacionados de la tabla especificada.'''
         return self.muchosAMuchos[tabla].copy()
     
     def borrarRelacion(self, registro: Registro, tabla ):
+        '''Borra una relación entre el registro actual y otro registro de la tabla especificada.'''
         self.muchosAMuchos[tabla].pop(registro.id)  
     
          
     def __cargar(self, bdd, tabla): 
+        '''Carga las relaciones del registro actual con la tabla especificada desde la base de datos'''
+
         self.muchosAMuchos[tabla] = {}
         with bdd as bdd:
                 self.muchosAMuchos[tabla] = self.__class__.muchosAMuchos[tabla].paresDesdeId(bdd, self.id, tabla)
    
     def __guardar(self, tabla ):
+        '''Guarda las relaciones del registro actual con la tabla especificada en la base de datos'''
         self.__class__.muchosAMuchos[tabla].guardarRelaciones(self, self.muchosAMuchos[tabla], self.__bdd)
 
 
@@ -253,7 +259,8 @@ class RegistroIntermedio(Registro):
     
     @sobrecargar
     def __init__(self, bdd: ProtocoloBaseDeDatos, id_primaria, id_secundaria):
-       
+        '''Inicializa un registro intermedio que relaciona  dos registros, uno de la tabla primaria y otro de la secundaria, segun sus ids'''
+
         atributos = bdd\
                 .SELECT(tabla=self.tabla_primaria.__name__, columnas=self.atributos())\
                 .WHERE(**{self.__class__._nombreId(self.tabla_primaria) : id_primaria, self.__class__.nombreId(self.tabla_secundaria) : id_secundaria})\
@@ -284,20 +291,22 @@ class RegistroIntermedio(Registro):
             return secundarias
 
     @classmethod
-    def guardarRelaciones(cls, destino, guardadas, bdd):
+    def guardarRelaciones(cls, registro_destino, registros_guardados, bdd):
+        '''Guarda las relaciones del registro_destino actua con los registros_guardados en la base de datos'''
+
         cls(bdd, {})
-        tabla_destino = destino.__class__
-        cls.__obtenerPar(tabla_destino)(bdd, {})
-        nombre_id1 = cls._nombreId(cls.__obtenerPar(tabla_destino))
-        nombre_id2 = cls._nombreId(tabla_destino)
+        tabla_registro_destino = registro_destino.__class__
+        cls.__obtenerPar(tabla_registro_destino)(bdd, {})
+        nombre_id1 = cls._nombreId(cls.__obtenerPar(tabla_registro_destino))
+        nombre_id2 = cls._nombreId(tabla_registro_destino)
         with bdd as bdd:
-            guardadasAnteriores = cls.paresDesdeId(bdd, destino.id, cls.__obtenerPar(destino.__class__)) # esto se podria evitar guardando un diccionario de guardadas nuevas y otro de guardadas borradas
-            for secundaria_id in guardadasAnteriores:
-                if secundaria_id not in guardadas:
-                    cls.borrar(bdd, {nombre_id1 :secundaria_id, nombre_id2:destino.id})
-            for secundaria_id in guardadas:
-                if secundaria_id not in guardadasAnteriores:
-                    cls(bdd, {nombre_id2 : destino.id, nombre_id1 : secundaria_id}).guardar()  
+            registros_guardadosAnteriores = cls.paresDesdeId(bdd, registro_destino.id, cls.__obtenerPar(registro_destino.__class__)) # esto se podria evitar guardando un diccionario de registros_guardados nuevas y otro de registros_guardados borradas
+            for secundaria_id in registros_guardadosAnteriores:
+                if secundaria_id not in registros_guardados:
+                    cls.borrar(bdd, {nombre_id1 :secundaria_id, nombre_id2:registro_destino.id})
+            for secundaria_id in registros_guardados:
+                if secundaria_id not in registros_guardadosAnteriores:
+                    cls(bdd, {nombre_id2 : registro_destino.id, nombre_id1 : secundaria_id}).guardar()  
    
     
     @classmethod
@@ -321,6 +330,7 @@ class RegistroIntermedio(Registro):
 
     @classmethod
     def __obtenerPar(cls, tabla):
+        """Devuelve la tabla opuesta a la que se le pasa como parámetro segun la relacion muchos a muchos."""
         if tabla.__name__ == cls.tabla_primaria.__name__:
             return cls.tabla_secundaria
         elif tabla.__name__ == cls.tabla_secundaria.__name__:

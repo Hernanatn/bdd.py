@@ -6,13 +6,8 @@ from chastack_bdd.registro import Registro, RegistroIntermedio
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
     
-        if Registro not in bases and nombre != 'Registro':
-            bases = (Registro,) + bases
-        bases_ext = bases
-
-        # ATENCION: Este codigo comentado corresponde a un cambio hecho por Hernan 
-        #if not any(issubclass(base, Registro) for base in bases):
-        #    bases_ext = (Registro,) + bases
+        if not any(issubclass(base, Registro) for base in bases):
+            bases_ext = (Registro,) + bases
         
         cls = super().__new__(mcs, nombre, bases_ext, atributos)
         
