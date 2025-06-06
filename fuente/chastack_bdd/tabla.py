@@ -1,13 +1,22 @@
 from chastack_bdd.tipos import *
 from chastack_bdd.utiles import *
 from chastack_bdd.bdd import ProtocoloBaseDeDatos
-from chastack_bdd.registro import Registro
+from chastack_bdd.registro import Registro, RegistroIntermedio
 
 class Tabla(type):
-    def __new__(mcs, nombre, bases, atributos):
+    def __new__(mcs, nombre, bases, atributos, esIntermedia: bool =False):
+        
+        if esIntermedia:
+            if RegistroIntermedio not in bases and nombre != 'RegistroIntermedio':
+                bases = (RegistroIntermedio,) + bases
+        else:
+            if Registro not in bases and nombre != 'Registro':
+                bases = (Registro,) + bases
         bases_ext = bases
-        if not any(issubclass(base, Registro) for base in bases):
-            bases_ext = (Registro,) + bases
+
+        # ATENCION: Este codigo comentado corresponde a un cambio hecho por Hernan 
+        #if not any(issubclass(base, Registro) for base in bases):
+        #    bases_ext = (Registro,) + bases
         
         cls = super().__new__(mcs, nombre, bases_ext, atributos)
         
@@ -186,3 +195,14 @@ class Tabla(type):
             return f"enum({','.join(valores)})"
 
         return tipos_inversos.get(tipo_python, 'text').upper()
+
+
+    
+class TablaIntermedia(Tabla):
+    #'__tabla_primaria',
+    #'__tabla_secundaria', tienen que ser atributos de clase del
+    def __new__(mcs, nombre, bases, atributos):
+                
+        return super().__new__(mcs, nombre, bases, atributos, esIntermedia=True)
+        
+        
