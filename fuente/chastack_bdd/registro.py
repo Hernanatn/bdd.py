@@ -15,10 +15,12 @@ class Registro:
     __bdd : ProtocoloBaseDeDatos
     __tabla : str
     __id : int
-    muchosAMuchos : dict[dict] = {}
+
+    muchosAMuchos = {}
 
     
     def __new__(cls, bdd : ProtocoloBaseDeDatos, *posicionales,**nominales):
+
         obj = super(Registro, cls).__new__(cls)
         cls.__tabla = cls.__name__
         obj.__bdd = bdd
@@ -30,7 +32,7 @@ class Registro:
     @sobrecargar
     def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict, *, debug : bool =False):
         self.muchosAMuchos = {}
-        for tabla in self.__class__.muchosAMuchos.keys:
+        for tabla in self.__class__.muchosAMuchos.keys():
             self.muchosAMuchos[tabla] = {} 
        
         for atributo in self.__slots__:
@@ -63,7 +65,7 @@ class Registro:
        
        
         self.muchosAMuchos = {} # Convertir a slot
-        for tabla in self.__class__.muchosAMuchos.keys:
+        for tabla in self.__class__.muchosAMuchos.keys():
             self.muchosAMuchos[tabla] = {} 
        
         resultado : Resultado
@@ -83,7 +85,7 @@ class Registro:
         self.__bdd = bdd
         self.__id = id
 
-        for tabla in self.__class__.muchosAMuchos.keys:
+        for tabla in self.__class__.muchosAMuchos.keys():
             self.__cargar(bdd, tabla)
 
     def guardar(self) -> int:
@@ -104,6 +106,9 @@ class Registro:
                 self.__id = self.__crear()
             case _: 
                 self.__editar()
+        
+        for tabla in self.__class__.muchosAMuchos.keys():
+            self.__guardar(tabla)
 
         return devolverAtributoPrivado(self,'id')
     
@@ -217,21 +222,13 @@ class Registro:
         }.items())
 
 
-    ##### MUCHOS A MUCHOS #####
-    def guardar(self):
-
-        self.__id = super().guardar()
-        for tabla in self.__class__.muchosAMuchos.keys:
-            self.__guardar(tabla)
-        return self.__id
-
-    def añadir(self, registro, tabla):
+   
+    def añadirRelacion(self, registro, tabla):
         self.muchosAMuchos[tabla][registro.id] = registro
-
-    def obtener(self, tabla ):
+    def obtenerMuchos(self, tabla ):
         return self.muchosAMuchos[tabla].copy()
     
-    def borrar(self, registro: Registro, tabla ):
+    def borrarRelacion(self, registro: Registro, tabla ):
         self.muchosAMuchos[tabla].pop(registro.id)  
     
          
@@ -251,23 +248,12 @@ class RegistroIntermedio(Registro): ...
 class RegistroIntermedio(Registro):
     tabla_primaria : Registro.__class__ = None 
     tabla_secundaria : Registro.__class__ = None
-    
-    __bdd : ProtocoloBaseDeDatos
-    __tabla : str
-    __id : int
-    
-    
-    __slots__ = (
-        '__bdd',
-        '__tabla',
-        '__id',
-        '__id_primaria',
-        '__id_secundaria'
-    )
+
 
     
     @sobrecargar
     def __init__(self, bdd: ProtocoloBaseDeDatos, id_primaria, id_secundaria):
+       
         atributos = bdd\
                 .SELECT(tabla=self.tabla_primaria.__name__, columnas=self.atributos())\
                 .WHERE(**{self.__class__._nombreId(self.tabla_primaria) : id_primaria, self.__class__.nombreId(self.tabla_secundaria) : id_secundaria})\
@@ -278,8 +264,9 @@ class RegistroIntermedio(Registro):
     
     @classmethod
     def paresDesdeId(cls, bdd: ProtocoloBaseDeDatos, id: int, tabla_buscada):
+        '''Devuelve todos los registros de la tabla_buscada relacionados con el registro de id = id'''
         cls.tabla_secundaria(bdd, {})
-        nombre_id1 = cls.nombreId(cls.__obtenerPar(tabla_buscada))
+        nombre_id1 = cls._nombreId(cls.__obtenerPar(tabla_buscada))
         nombre_id2 = cls._nombreId(tabla_buscada)
 
         with bdd as bdd:
@@ -298,41 +285,33 @@ class RegistroIntermedio(Registro):
 
     @classmethod
     def guardarRelaciones(cls, destino, guardadas, bdd):
+        cls(bdd, {})
         tabla_destino = destino.__class__
         cls.__obtenerPar(tabla_destino)(bdd, {})
-        nombre_id1 = cls.idSecundariaNombre(cls.__obtenerPar(tabla_destino))
+        nombre_id1 = cls._nombreId(cls.__obtenerPar(tabla_destino))
         nombre_id2 = cls._nombreId(tabla_destino)
         with bdd as bdd:
-            guardadasAnteriores = cls.paresDesdeId(bdd, destino.id, destino.__class__) # esto se podria evitar guardando un diccionario de guardadas nuevas y otro de guardadas borradas
+            guardadasAnteriores = cls.paresDesdeId(bdd, destino.id, cls.__obtenerPar(destino.__class__)) # esto se podria evitar guardando un diccionario de guardadas nuevas y otro de guardadas borradas
             for secundaria_id in guardadasAnteriores:
                 if secundaria_id not in guardadas:
-                    cls(bdd, {nombre_id1 :secundaria_id, nombre_id2:destino.id}).borrar()
+                    cls.borrar(bdd, {nombre_id1 :secundaria_id, nombre_id2:destino.id})
             for secundaria_id in guardadas:
                 if secundaria_id not in guardadasAnteriores:
                     cls(bdd, {nombre_id2 : destino.id, nombre_id1 : secundaria_id}).guardar()  
    
     
-    def borrar(self):
-        with self.__bdd as bdd:
+    @classmethod
+    def borrar(cls, bdd, condiciones):
+        with bdd as bdd:
             bdd\
-            .DELETE(tabla=self.tabla_primaria.__name__)\
-            .WHERE(**{atributo: self.__getattribute__(atributo) for atributo in self.__class__.atributos()})\
+            .DELETE(tabla=cls.__name__)\
+            .WHERE(**condiciones)\
             .ejecutar()
 
     @classmethod
     def atributos(cls, tabla):
         return [atributoPublico(atr) for atr in tabla.__slots__ if atr not in ('__bdd','__tabla')]
 
-    @classmethod
-    def idSecundariaNombre(cls):
-        nombre_id = 'id_'
-        nombre_id += cls.tabla_secundaria.__name__.lower()
-        return nombre_id
-    @classmethod
-    def idPrimariaNombre(cls):
-        nombre_id = 'id_'
-        nombre_id += cls.tabla_primaria.__name__.lower()
-        return nombre_id
 
     @classmethod 
     def _nombreId(cls, tabla):
@@ -342,8 +321,8 @@ class RegistroIntermedio(Registro):
 
     @classmethod
     def __obtenerPar(cls, tabla):
-        if tabla == cls.tabla_primaria:
+        if tabla.__name__ == cls.tabla_primaria.__name__:
             return cls.tabla_secundaria
-        elif tabla == cls.tabla_secundaria:
+        elif tabla.__name__ == cls.tabla_secundaria.__name__:
             return cls.tabla_primaria
     
