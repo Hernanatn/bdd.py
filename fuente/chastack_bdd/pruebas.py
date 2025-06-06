@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from chastack_bdd.tipos import *
 from chastack_bdd.utiles import *
 from chastack_bdd.bdd import ConfigMySQL, BaseDeDatos_MySQL, ProtocoloBaseDeDatos
-from chastack_bdd.tabla import Tabla  
+from chastack_bdd.tabla import Tabla , TablaIntermedia
 
 from chastack_bdd.registro import Registro
 from chastack_bdd.usuario import Usuario
@@ -52,11 +52,13 @@ j = Administrador.registrar(
     atributo_juan=7,
     nombre="juan"
 )
-print(Juan)
+print(j)
 j.guardar()
 #print(j)
 
-j2 = Juan.ingresar(bdd,f"juan@juan.juan{u}","JuanJuan!1234")
+j2 = j.ingresar(bdd,f"juan@juan.juan{u}","JuanJuan!1234")
 print(j2)
 #admin10 = Administrador(bdd=bdd,id=81)
 #print(admin10)
+
+
