@@ -43,9 +43,9 @@ print(Administrador)
 print(admin1)
 
 
-class Administrador(Usuario, metaclass=Tabla):...
+class Juan(Usuario, metaclass=Tabla):...
     
-j = Administrador.registrar(
+j = Juan.registrar(
     bdd,
     correo=f"juan@juan.juan{u}",
     contrasena="JuanJuan!1234",
