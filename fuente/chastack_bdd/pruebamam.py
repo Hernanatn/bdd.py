@@ -44,19 +44,26 @@ bdd = BaseDeDatos_MySQL(config)
 
 
 
-nota = Nota.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})[0]
-nota = Nota(bdd, id=nota.id)
-print(nota.obtenerVoces())
+notas = Nota.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
+print(Nota)
+for nota in notas:
+    print(nota)
+    nota = Nota(bdd, id=nota.id)
+    print(nota)
 
-voces = Voz.devolverRegistros(bdd)
-voz = voces[0]
-nota.añadirVoz(voz)
-nota.añadirVoz(voces[1])
-nota.añadirVoz(Voz(bdd, voces[2].id))
-nota.guardar()
-print(nota.obtenerVoces())
-nota.borrarVoz(voz)
-nota.guardar()
-print(nota.obtenerVoces())
-nota = Nota(bdd, id=nota.id)
-print(nota.obtenerVoces())
+    voces = Voz.devolverRegistros(bdd)
+    voz = voces[0]
+    nota.añadirVoz(voz)
+    nota.añadirVoz(voces[1])
+    nota.añadirVoz(Voz(bdd, voces[2].id))
+    nota.guardar()
+
+    print(nota)
+    for _,voz in nota.obtenerVoces().items(): print(voz)
+    nota.borrarVoz(voz)
+    nota.guardar()
+    print(nota)
+    for _,voz in nota.obtenerVoces().items(): print(voz)
+    nota = Nota(bdd, id=nota.id)
+    print(nota)
+    for _,voz in nota.obtenerVoces().items(): print(voz)

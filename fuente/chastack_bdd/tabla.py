@@ -6,7 +6,8 @@ from chastack_bdd.registro import Registro, RegistroIntermedio
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
     
-        if not any(issubclass(base, Registro) for base in bases):
+        bases_ext = bases
+        if not any(issubclass(base, Registro) for base in bases) and nombre != 'Registro':
             bases_ext = (Registro,) + bases
         
         cls = super().__new__(mcs, nombre, bases_ext, atributos)
@@ -193,14 +194,9 @@ class Tabla(type):
 class TablaIntermedia(type):
     def __new__(mcs, nombre, bases, atributos, esIntermedia: bool =True):
         
-  
-        if RegistroIntermedio not in bases and nombre != 'RegistroIntermedio':
-            bases = (RegistroIntermedio,) + bases
         bases_ext = bases
-
-        # ATENCION: Este codigo comentado corresponde a un cambio hecho por Hernan 
-        #if not any(issubclass(base, Registro) for base in bases):
-        #    bases_ext = (Registro,) + bases
+        if not any(issubclass(base, RegistroIntermedio) for base in bases) and nombre != 'RegistroIntermedio':
+            bases_ext = (RegistroIntermedio,) + bases
         
         cls = super().__new__(mcs, nombre, bases_ext, atributos)
         
@@ -230,7 +226,7 @@ class TablaIntermedia(type):
     
     def __str__(cls):
         if not cls.__INICIALIZADA: 
-            return f"<Tabla {cls.__name__}>"
+            return f"<TablaIntermedia {cls.__name__}>"
         filas = {atributoPublico(ll) : v for ll,v in cls.__annotations__.items()}      
         ll_max, v_max = max(len(str(ll)) for ll, _ in filas.items() ), max(len(str(v)) for _, v in filas.items() )
         tabla_str = f"┌{'─' * (ll_max + 2)}┐\n" \
