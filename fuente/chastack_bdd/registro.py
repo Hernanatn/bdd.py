@@ -221,6 +221,9 @@ class Registro:
                 )
         }.items())
 
+    @classmethod
+    def atributos(cls, tabla):
+        return [atributoPublico(atr) for atr in tabla.__slots__ if atr not in ('__bdd','__tabla')]
 
    
     def añadirRelacion(self, registro, tabla):
