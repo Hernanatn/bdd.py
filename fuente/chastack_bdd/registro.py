@@ -152,6 +152,7 @@ class Registro:
                 .ejecutar()
 
     @classmethod
+    @sobrecargar
     def devolverRegistros(
         cls,
         bdd : ProtocoloBaseDeDatos,
@@ -183,7 +184,44 @@ class Registro:
                 registros.append(cls(bdd, resultado))
 
         return tuple(registros)
+ 
+    @classmethod
+    @sobrecargar
+    def devolverRegistros(
+        cls,
+        bdd : ProtocoloBaseDeDatos,
+        *,
+        cantidad : Optional[int] = 1000,
+        indice : Optional[int] = 0,
+        orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
+        filtrosJoin : dict[str,str] = None,
+        condiciones : dict[TipoCondicion, dict[str,Any]]) -> tuple[Registro]:
 
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+        resultados : tuple[Resultado]
+        atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
+        
+        desplazamiento = indice*cantidad 
+
+        bdd\
+        .SELECT(cls.__name__, atributos)
+        for tipo, condiciones in condiciones.items():
+            bdd.WHERE(tipo,**condiciones)
+        bdd\
+        .ORDER_BY(orden)\
+        .LIMIT(desplazamiento,cantidad)
+
+        with bdd as bdd:
+            resultados = bdd\
+                        .ejecutar()\
+                        .devolverResultados()
+        registros = []
+        if resultados:
+            for resultado in resultados:
+                registros.append(cls(bdd, resultado))
+
+        return tuple(registros)
+ 
     def __cmp__(self, otro : Registro) -> int:  
         if not isinstance(otro, type(self)): raise TypeError(f"Se esperaba {type(self)}, se obtuvo {type(otro)}")
         if self.id == otro.id: return 0;

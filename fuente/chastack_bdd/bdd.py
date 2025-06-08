@@ -173,7 +173,7 @@ class Consulta():
         self.WHERE(TipoCondicion.NO_ES, id = None)
         return self
     def WHERE(self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]):
-        condiciones : str = '   AND '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } {tipoCondicion} {self.adaptar(valor)}" for columna, valor in columnaValor.items())
+        condiciones : str = '   AND '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } {tipoCondicion} {f"{'%' + self.adaptar(valor) + '%' if tipoCondicion == TipoCondicion.PARECIDO else self.adaptar(valor)}"}" for columna, valor in columnaValor.items())
         if not condiciones: return self
         if not self.__condicion: self.__condicion = f'WHERE {condiciones}\n'
         else: self.__condicion += f' AND {condiciones}\n'
