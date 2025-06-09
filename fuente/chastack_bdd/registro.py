@@ -159,9 +159,10 @@ class Registro:
         *,
         cantidad : Optional[int] = 1000,
         indice : Optional[int] = 0,
-        orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
+        orden : Optional[dict[str, TipoOrden]] = None,
         filtrosJoin : dict[str,str] = None,
         **condiciones) -> tuple[Registro]:
+        if orden is None: orden = {"id":TipoOrden.ASC}
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
         resultados : tuple[Resultado]
         atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
@@ -193,10 +194,10 @@ class Registro:
         *,
         cantidad : Optional[int] = 1000,
         indice : Optional[int] = 0,
-        orden : Optional[[dict[str, TipoOrden]]] = {"id":TipoOrden.ASC},
+        orden : Optional[dict[str, TipoOrden]] = None,
         filtrosJoin : dict[str,str] = None,
         condiciones : dict[TipoCondicion, dict[str,Any]]) -> tuple[Registro]:
-
+        if orden is None: orden = {"id":TipoOrden.ASC}
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
         resultados : tuple[Resultado]
         atributos : tuple[str] = (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))

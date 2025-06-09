@@ -28,7 +28,7 @@ bdd = BaseDeDatos_MySQL(config)
 
 
 
-dds = Administrador.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
+dds = Administrador.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC}, correo="desarrollo@cajadeideas.ar")
 for dd in dds:
     print(dd)
     print(dd.nombre_usuario)
