@@ -173,7 +173,7 @@ class Consulta():
         self.WHERE(TipoCondicion.NO_ES, id = None)
         return self
     def WHERE(self, tipoCondicion : TipoCondicion = TipoCondicion.IGUAL , **columnaValor : Unpack[dict[str, Any]]):
-        condiciones : str = '   AND '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } {tipoCondicion} {f"{'%' + self.adaptar(valor) + '%' if tipoCondicion == TipoCondicion.PARECIDO else self.adaptar(valor)}"}" for columna, valor in columnaValor.items())
+        condiciones : str = '   AND '.join(f"{self.etiquetar(self.__tabla_principal, [columna]) } {tipoCondicion} {self.adaptar(valor, parecido=tipoCondicion == TipoCondicion.PARECIDO)}" for columna, valor in columnaValor.items())
         if not condiciones: return self
         if not self.__condicion: self.__condicion = f'WHERE {condiciones}\n'
         else: self.__condicion += f' AND {condiciones}\n'
@@ -210,8 +210,8 @@ class Consulta():
         """Recibe una tabla y columnas. devuelve cada columna en el namespace de la tabla"""
         return ', '.join([tabla + '.' + columna  for columna in columnas])
 
-    def adaptar(self, valor : Any) -> str:
-        return formatearValorParaSQL(valor)
+    def adaptar(self, valor : Any, parecido : bool = False) -> str:
+        return formatearValorParaSQL(valor, parecido=parecido)
 
     def reiniciar(self):
         self.__instruccionPrincipal = InstruccionPrincipal()

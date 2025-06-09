@@ -58,3 +58,6 @@ class EnumSQL(Enum,metaclass=EnumSQLMeta):
 
     def __eq__(self, otro : Union['EnumSQL',int,str,Any]) -> bool:
         return (self.name == otro.name and self.value == otro.value) if isinstance(otro,type(self)) else self.value == otro if isinstance(otro,int) else (self.name == otro or self.value == otro) 
+    
+    def __hash__(self):
+        return hash(self.name)

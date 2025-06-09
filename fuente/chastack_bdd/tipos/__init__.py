@@ -9,7 +9,7 @@ from solteron import Solteron
 ### BDD
 Resultado : TypeAlias = dict[str,Any]
 
-class TipoCondicion:
+class TipoCondicion(EnumSQL):
     IGUAL = '='
     PARECIDO = 'LIKE'
     DIFERENTE = '!='
