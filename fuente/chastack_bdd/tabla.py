@@ -50,7 +50,7 @@ class Tabla(type):
     def __inicializar(cls,bdd):
             cls.__DEBUG(f"{cls.__qualname__} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
             if cls.__INICIALIZADA: return
-            print(cls.__slots__)
+            
             cls.__DEBUG(f"Inicializando modelo para: {cls.__tabla}.")
             slots :list[str] = []        
             anotaciones : dict[str,type] = {}
@@ -238,7 +238,7 @@ class TablaIntermedia(type):
     def __inicializar(cls,bdd):
             cls.__DEBUG(f"{cls.__qualname__} {'ya' if cls.__INICIALIZADA else 'no'} estaba inicializada.")
             if cls.__INICIALIZADA: return
-            print(cls.__slots__)
+            
             cls.__DEBUG(f"Inicializando modelo para: {cls.__tabla}.")
             slots :list[str] = []        
             anotaciones : dict[str,type] = {}
