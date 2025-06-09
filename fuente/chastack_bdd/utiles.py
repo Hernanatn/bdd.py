@@ -41,10 +41,12 @@ def tipoSQLDesdePython(tipo_python: type) -> str:
 
     return tipos.get(tipo_python, 'text')
 
-def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
+def formatearValorParaSQL(valor: Any, html : bool = False, parecido : bool = False) -> str:
     """
     Formatea un valor de Python a una representación adecuada para SQL.
     """
+    prefijo = sufijo = "%" if parecido else ""
+    infijo = "%" if parecido else " "
     if valor is None:
         return "NULL"
     if isinstance(valor, bool):
@@ -64,9 +66,9 @@ def formatearValorParaSQL(valor: Any, html : bool = False) -> str:
     if isinstance(valor, Enum):
         return str(valor.value) if isinstance(valor.value, int) else f"'{valor.name}'"
     if isinstance(valor, str):
-        return f"'{valor.replace("'", "''")}'"
+        return f"'{prefijo}{valor.replace("'", "''").replace(" ", infijo)}{sufijo}'"
         
-    return f"'{str(valor).replace("'", "''")}'"
+    return f"'{prefijo}{str(valor).replace("'", "''").replace(" ", infijo)}{sufijo}'"
 
 def esSubclaseUnion(cls: type, clase_objetivo: Union[type, tuple[Union[type, tuple[Any, ...]], ...]], /) -> bool:
     """Devuelve True si cls es (o contiene) una subclase de objetivo"""
