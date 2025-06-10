@@ -1,0 +1,8 @@
+[run]
+data_file = chastack_bdd/pruebas/reportes/.coverage
+
+[html]
+directory = chastack_bdd/pruebas/reportes/htmlcov
+
+[xml]
+output = chastack_bdd/pruebas/reportes/coverage.xml

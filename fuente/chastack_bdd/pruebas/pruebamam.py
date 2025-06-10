@@ -45,7 +45,8 @@ bdd = BaseDeDatos_MySQL(config)
 
 
 notas = Nota.devolverRegistros(bdd, cantidad = 25, orden ={"id" : TipoOrden.DESC})
-print(Nota)
+print(notas)
+
 for nota in notas:
     print(nota)
     nota = Nota(bdd, id=nota.id)

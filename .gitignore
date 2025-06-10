@@ -7,3 +7,4 @@ prueba-*
 .mypy_cache
 .venv
 chaskavenv
+.secretos
