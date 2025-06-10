@@ -352,7 +352,6 @@ class PruebaTablaIntermedia(unittest.TestCase):
 
     def test_relacion_entre_nota_y_voces(self):
         notas = Nota.devolverRegistros(self.bdd, cantidad=25, orden={"id": TipoOrden.DESC})
-        print("NOTASSSSSSSSSS",notas)
         self.assertGreater(len(notas), 0)
 
         nota = Nota(self.bdd, id=notas[0].id)
