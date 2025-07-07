@@ -379,7 +379,9 @@ class PruebaTablaIntermedia(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    crearBaseDeDatos()
-    crearYPoblarTablas()
-    unittest.main()
-    destruirBaseDeDatos()
+    try:
+        crearBaseDeDatos()
+        crearYPoblarTablas()
+        unittest.main()
+    finally:
+        destruirBaseDeDatos()
