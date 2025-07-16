@@ -121,8 +121,8 @@ class Usuario(Registro):
         id_sesion : str
     ) -> 'Usuario':
         datos : Optional[Resultado]
-        columnas : tuple[str] = self.__devolverColumnas()
-        with self.__bdd:
+        columnas : tuple[str] = cls.__devolverColumnas()
+        with bdd:
             datos = bdd.SELECT(cls.__name__,columnas)\
                     .WHERE(TipoCondicion.IGUAL,id_sesion=id_sesion)\
                     .ejecutar().devolverUnResultado()
