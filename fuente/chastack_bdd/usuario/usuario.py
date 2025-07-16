@@ -219,8 +219,6 @@ class Usuario(Registro):
             :param tuple[str]: columnas SQL.    
         ---  
         """
-        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
-
         return (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
     
     def _actualizarFechaIngreso(self, fecha_ultimo_ingreso : datetime = datetime.now()):
