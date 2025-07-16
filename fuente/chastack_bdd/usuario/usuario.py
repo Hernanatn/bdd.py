@@ -69,6 +69,8 @@ class Usuario(Registro):
         nombre_usuario : str = None,
         **nominales,
     ):
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+
         este_usuario = cls(bdd, correo, contrasena, nombre_usuario)
         este_usuario.__init__(bdd, valores=dict(**nominales))
         return este_usuario
@@ -94,6 +96,8 @@ class Usuario(Registro):
             :param Usuario: Instancia del usuario autenticado    
         ---  
         """
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+
         datos : Optional[Resultado]
         columnas : tuple[str] = cls.__devolverColumnas()
         with bdd as bdd:
@@ -120,6 +124,8 @@ class Usuario(Registro):
         bdd : ProtocoloBaseDeDatos,
         id_sesion : str
     ) -> 'Usuario':
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+
         datos : Optional[Resultado]
         columnas : tuple[str] = cls.__devolverColumnas()
         with bdd:
@@ -213,6 +219,8 @@ class Usuario(Registro):
             :param tuple[str]: columnas SQL.    
         ---  
         """
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+
         return (atributoPublico(atr) for atr in cls.__slots__ if atr not in ('__bdd','__tabla'))
     
     def _actualizarFechaIngreso(self, fecha_ultimo_ingreso : datetime = datetime.now()):
