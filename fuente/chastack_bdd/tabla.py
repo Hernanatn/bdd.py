@@ -60,7 +60,7 @@ class Tabla(type):
                 for columna in resultados:
                     nombre_campo = columna.get('Field')
                     es_clave = columna.get('Key') == "PRI"
-                    es_auto = "auto_increment" in columna.get("Extra", "").lower() or "default_generated" in columna.get("Extra", "").lower() or "auto_generated" in columna.get("Extra", "").lower() or "current_timestamp" in columna.get('Default')
+                    es_auto = "auto_increment" in columna.get("Extra", "").lower() or "default_generated" in columna.get("Extra", "").lower() or "auto_generated" in columna.get("Extra", "").lower() or "current_timestamp" in columna.get('Default', "").lower()
                     
                     nombre_attr = f"__{nombre_campo}" if es_clave or es_auto else nombre_campo
                     
