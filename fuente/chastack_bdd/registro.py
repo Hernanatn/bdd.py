@@ -29,6 +29,10 @@ class Registro:
                 setattr(cls, nombre_campo, property(lambda cls, nombre_=nombre_campo: devolverAtributoPrivado(cls,nombre_)))
         return obj        
 
+    @classmethod
+    def inicializar(cls, bdd: ProtocoloBaseDeDatos):
+        devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
+
     @sobrecargar
     def __init__(self, bdd : ProtocoloBaseDeDatos, valores : dict, *, debug : bool =False):
         self.muchosAMuchos = {}
