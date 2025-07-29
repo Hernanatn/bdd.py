@@ -64,7 +64,7 @@ class BaseDeDatos_PostgreSQL():
         self.config = config
         self.conexion = None
         self.cursor = None
-        self._consulta = None  # Aquí podrías adaptar la lógica de construcción de consultas
+        self._consulta = None  # En este ejemplo no utilizamos la clase `Consulta` en su lugar implementamos todo directo en baseDeDatos_Postgres
 
     def conectar(self):
         if self.conexion is None:
