@@ -3,10 +3,18 @@ from chastack_bdd.utiles import *
 from chastack_bdd.usuario.errores import *
 from chastack_bdd import Tabla, Registro
 from chastack_bdd import ProtocoloBaseDeDatos, TipoCondicion, ErrorMalaSolicitud
-from typing import Optional
+import typing as t
 import os
 from secrets import token_bytes, token_urlsafe
 from hashlib import sha256
+
+
+class Usuario(Registro):
+    class TipoRol(EnumSQL):
+        USUARIO = 1
+        ADMINISTRADOR = 2
+        SUPERUSUARIO = 3
+    ...
 
 class Usuario(Registro):
     """
@@ -20,17 +28,24 @@ class Usuario(Registro):
         "contrasena",
         "id_sesion",
         "codigo_unico",
+        "rol",
         "sal",
         "__fecha_ultimo_ingreso",
     )
+
+    class TipoRol(EnumSQL):
+        USUARIO = 1
+        ADMINISTRADOR = 2
+        SUPERUSUARIO = 3
 
     nombre_usuario : str
     correo : str
     contrasena : bytes
     __fecha_ultimo_ingreso : datetime
     id_sesion : str
-    codigo_unico : Optional[str]
+    codigo_unico : t.Optional[str]
     sal : bytes
+    rol : Usuario.TipoRol
 
     @sobrecargar
     def __init__(
@@ -38,7 +53,7 @@ class Usuario(Registro):
         bdd : ProtocoloBaseDeDatos, 
         correo : str,
         contrasena : str,
-        nombre_usuario : str = None
+        nombre_usuario : t.Optional[str] = None
         ,*,debug : bool = False,
     ):
         correo = correo
@@ -66,13 +81,14 @@ class Usuario(Registro):
         bdd : ProtocoloBaseDeDatos, 
         correo : str,
         contrasena : str,
-        nombre_usuario : str = None,
-        **nominales,
+        nombre_usuario : t.Optional[str] = None,
+        rol : Usuario.TipoRol = None
+        ,**nominales,
     ):
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
 
         este_usuario = cls(bdd, correo, contrasena, nombre_usuario)
-        este_usuario.__init__(bdd, valores=dict(**nominales))
+        este_usuario.__init__(bdd, valores=dict(rol = rol if rol is not None else Usuario.TipoRol.USUARIO,**nominales))
         return este_usuario
 
     @classmethod
@@ -98,7 +114,7 @@ class Usuario(Registro):
         """
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
 
-        datos : Optional[Resultado]
+        datos : t.Optional[Resultado]
         columnas : tuple[str] = cls.__devolverColumnas()
         with bdd as bdd:
             bdd.SELECT(cls.__name__,columnas)
@@ -126,7 +142,7 @@ class Usuario(Registro):
     ) -> 'Usuario':
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
 
-        datos : Optional[Resultado]
+        datos : t.Optional[Resultado]
         columnas : tuple[str] = cls.__devolverColumnas()
         with bdd:
             datos = bdd.SELECT(cls.__name__,columnas)\
@@ -161,6 +177,9 @@ class Usuario(Registro):
         self.guardar()
         return self
     
+    def verificarRol(self, r: Usuario.TipoRol) -> bool:
+        return self.rol >= r
+
     @staticmethod
     def encriptarContraseña(contrasena: str, sal: bytes = None) -> tuple[bytes, bytes]:
         """Encripta una contraseña usando SHA-256 con sal y pimienta.  

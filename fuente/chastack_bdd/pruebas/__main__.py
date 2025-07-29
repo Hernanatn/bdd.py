@@ -148,6 +148,7 @@ def crearYPoblarTablas():
                 correo VARCHAR(75) NOT NULL,
                 contrasena VARBINARY(96) NOT NULL,
                 sal VARBINARY(96) NOT NULL,
+                rol ENUM('USUARIO','ADMINISTRADOR','SUPERUSUARIO') DEFAULT 'USUARIO' NOT NULL,
                 fecha_ultimo_ingreso TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 id_sesion VARCHAR(300) DEFAULT NULL,
                 codigo_unico VARCHAR(300) DEFAULT NULL,
@@ -305,7 +306,7 @@ class PruebaRegistros(unittest.TestCase):
             "bio": 'una biografia aleatoria\nde juan pelotas.',
         })
         cliente.guardar()
-        #print(cliente.id)
+        print(cliente)
         self.assertIsNotNone(cliente.id)
         self.assertEqual(cliente.id,1)
         u = datetime.now().microsecond
@@ -316,13 +317,15 @@ class PruebaRegistros(unittest.TestCase):
                 nombre_usuario=f"admin{u}",
                 contrasena="admin1234".encode('utf-8'),
                 sal="asdadas".encode('utf-8'),
+                rol=Usuario.TipoRol.SUPERUSUARIO,
                 correo=f"admin{u}@fundacionzaffaroni.ar"
             )
         )
         admin.guardar()
-        print(admin.id)
+        print(admin)
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
+        self.assertEqual(admin.rol, Usuario.TipoRol.SUPERUSUARIO)
 
 
 class Administrador(Usuario,metaclass=Tabla):
@@ -353,14 +356,16 @@ class PruebaUsuario(unittest.TestCase):
             correo=f"juan@juan.juan{u}",
             contrasena="JuanJuan!1234",
             atributo_juan=7,
+            rol=Usuario.TipoRol.USUARIO,
             nombre="juan"
         )
         self.assertIsNotNone(juan)
         juan.guardar()
-        #print(juan.id)
+        print(juan)
         self.assertIsNotNone(juan.id)
         juan2 = juan.ingresar(self.bdd, f"juan@juan.juan{u}", "JuanJuan!1234")
         self.assertEqual(juan2.correo, f"juan@juan.juan{u}")
+        self.assertEqual(juan2.rol, Usuario.TipoRol.USUARIO)
 
     def test_crear_administrador(self):
         u = datetime.now().microsecond
@@ -371,13 +376,16 @@ class PruebaUsuario(unittest.TestCase):
                 nombre_usuario=f"admin{u}",
                 contrasena="admin1234".encode('utf-8'),
                 sal="asdadas".encode('utf-8'),
+                rol=Usuario.TipoRol.ADMINISTRADOR,
                 correo=f"admin{u}@fundacionzaffaroni.ar"
             )
         )
         admin.guardar()
-        #print(admin.id)
+        print(admin)
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
+        self.assertEqual(admin.rol, Usuario.TipoRol.ADMINISTRADOR)
+
 
 
 class Nota(metaclass=Tabla): ...
@@ -417,7 +425,7 @@ class PruebaTablaIntermedia(unittest.TestCase):
         nota.añadirVoz(voces[1])
         nota.añadirVoz(Voz(self.bdd, id=voces[2].id))
         nota.guardar()
-        #print(nota.id)
+        print(nota)
         self.assertIsNotNone(nota.id)
         obtenidas = nota.obtenerVoces()
         self.assertGreaterEqual(len(obtenidas), 3)
@@ -427,7 +435,7 @@ class PruebaTablaIntermedia(unittest.TestCase):
             nota.borrarVoz(voz)
             break
         nota.guardar()
-        #print(nota.id)
+        print(nota)
         self.assertIsNotNone(nota.id)
         nota_recargada = Nota(self.bdd, id=nota.id)
         self.assertIsInstance(nota_recargada, Nota)

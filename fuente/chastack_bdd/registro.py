@@ -108,8 +108,11 @@ class Registro:
         match self.__id:
             case None:
                 asignarAtributoPrivado(self,"id",self.__crear())
+                asignarAtributoPrivado(self,"fecha_carga",datetime.now())
             case _: 
                 self.__editar()
+
+        asignarAtributoPrivado(self,"fecha_modificacion",datetime.now())
         
         for tabla in self.__class__.muchosAMuchos.keys():
             self.__guardar(tabla)
@@ -152,6 +155,7 @@ class Registro:
                 .UPDATE(self.tabla,**ediciones)\
                 .WHERE(id=self.__id)\
                 .ejecutar()
+            self.__fecha_modificacion = datetime.now()
 
     @classmethod
     @sobrecargar

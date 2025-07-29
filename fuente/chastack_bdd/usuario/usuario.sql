@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `Usuario` (
     , `id_sesion` varchar(300) DEFAULT NULL
     , `codigo_unico` varchar(300) DEFAULT NULL
     , `sal` varbinary(96) NOT NULL
+    , `rol` ENUM('USUARIO','ADMINISTRADOR','SUPERUSUARIO') DEFAULT 'USUARIO' NOT NULL
     , UNIQUE KEY `nombre_usuario` (`nombre_usuario`)
     , UNIQUE KEY `correo` (`correo`)
     , UNIQUE KEY `id_sesion` (`id_sesion`)
