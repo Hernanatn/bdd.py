@@ -3,6 +3,7 @@ README.md
 pyproject.toml
 setup.py
 chastack_bdd/__init__.py
+chastack_bdd/__main__.py
 chastack_bdd/bdd.py
 chastack_bdd/registro.py
 chastack_bdd/tabla.py

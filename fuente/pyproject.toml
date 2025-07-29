@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chastack-bdd"
-version = "0.7.11"
+version = "0.7.12"
 authors = [
   { name="Hernán A.T.N.", email="herni@cajadeideas.ar" },
   { name="Joaquín Correa", email="correajoaquin7@gmail.com" },
@@ -12,7 +12,7 @@ authors = [
 ]
 description = "Abstracción de Bases de Datos en Python y constructor de modelos."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
