@@ -107,7 +107,7 @@ class Registro:
         """
         match self.__id:
             case None:
-                self.__id = self.__crear()
+                asignarAtributoPrivado(self,"id",self.__crear())
             case _: 
                 self.__editar()
         
@@ -135,14 +135,12 @@ class Registro:
             self.__fecha_carga = datetime.now()
             self.__fecha_modificacion = datetime.now()
 
-        return devolverAtributoPrivado(self,'id')
+        return self.__id
     
     def __editar(self) -> None: 
         """
         Edita un registro ya existente, dado por el ID, en la tabla correspondiente.
         """
-
-
         atributos : tuple[str] = (atr for atr in self.__slots__ if '__' not in atr)
         ediciones : dict[str,Any] = {
             atributo : getattr(self,atributo)
@@ -152,7 +150,7 @@ class Registro:
         with self.__bdd as bdd:
             bdd\
                 .UPDATE(self.tabla,**ediciones)\
-                .WHERE(id=devolverAtributoPrivado(self,'id'))\
+                .WHERE(id=self.__id)\
                 .ejecutar()
 
     @classmethod

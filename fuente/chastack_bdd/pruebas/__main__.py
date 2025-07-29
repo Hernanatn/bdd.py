@@ -52,6 +52,21 @@ def crearYPoblarTablas():
     try:
         cursor = conn.cursor()
 
+        # Tabla Cliente
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Cliente (
+                id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+                fecha_carga TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                fecha_modificacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                nombre VARCHAR(150) NOT NULL,
+                apellido VARCHAR(150) NOT NULL,
+                edad int NOT NULL,
+                correo VARCHAR(150) NOT NULL,
+                bio TEXT NOT NULL,
+                url_img_principal VARCHAR(150)
+            );
+        """)
+
         # Tabla Nota
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Nota (
@@ -273,15 +288,49 @@ CONFIG_BDD_PRUEBAS = ConfigMySQL(
             "chastack_bdd_pruebas",
         )
 
+class Cliente(metaclass=Tabla):...
+
+class PruebaRegistros(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.bdd = BaseDeDatos_MySQL(CONFIG_BDD_PRUEBAS)
+
+    def test_crear_registro(self):
+        cliente = Cliente(self.bdd,
+        {
+            'nombre': "Juan",
+            'apellido': "Pelotas",
+            'correo': "juan_pelotas@gmail.com",
+            'edad': 70,
+            "bio": 'una biografia aleatoria\nde juan pelotas.',
+        })
+        cliente.guardar()
+        #print(cliente.id)
+        self.assertIsNotNone(cliente.id)
+        self.assertEqual(cliente.id,1)
+        u = datetime.now().microsecond
+        admin = Administrador(
+            self.bdd,
+            dict(
+                nombre="Admin",
+                nombre_usuario=f"admin{u}",
+                contrasena="admin1234".encode('utf-8'),
+                sal="asdadas".encode('utf-8'),
+                correo=f"admin{u}@fundacionzaffaroni.ar"
+            )
+        )
+        admin.guardar()
+        print(admin.id)
+        self.assertIsNotNone(admin.id)
+        self.assertEqual(admin.nombre, "Admin")
+
+
 class Administrador(Usuario,metaclass=Tabla):
     @sobrecargar
     def unMetodo(x: int): ...
 
     @sobrecargar
     def unMetodo(x: str): ...
-
-
-
 
 class PruebaUsuario(unittest.TestCase):
     @classmethod
@@ -308,6 +357,8 @@ class PruebaUsuario(unittest.TestCase):
         )
         self.assertIsNotNone(juan)
         juan.guardar()
+        #print(juan.id)
+        self.assertIsNotNone(juan.id)
         juan2 = juan.ingresar(self.bdd, f"juan@juan.juan{u}", "JuanJuan!1234")
         self.assertEqual(juan2.correo, f"juan@juan.juan{u}")
 
@@ -323,6 +374,9 @@ class PruebaUsuario(unittest.TestCase):
                 correo=f"admin{u}@fundacionzaffaroni.ar"
             )
         )
+        admin.guardar()
+        #print(admin.id)
+        self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
 
 
@@ -363,7 +417,8 @@ class PruebaTablaIntermedia(unittest.TestCase):
         nota.añadirVoz(voces[1])
         nota.añadirVoz(Voz(self.bdd, id=voces[2].id))
         nota.guardar()
-
+        #print(nota.id)
+        self.assertIsNotNone(nota.id)
         obtenidas = nota.obtenerVoces()
         self.assertGreaterEqual(len(obtenidas), 3)
 
@@ -372,7 +427,8 @@ class PruebaTablaIntermedia(unittest.TestCase):
             nota.borrarVoz(voz)
             break
         nota.guardar()
-
+        #print(nota.id)
+        self.assertIsNotNone(nota.id)
         nota_recargada = Nota(self.bdd, id=nota.id)
         self.assertIsInstance(nota_recargada, Nota)
 
