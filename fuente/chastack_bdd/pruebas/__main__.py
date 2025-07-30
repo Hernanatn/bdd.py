@@ -326,7 +326,9 @@ class PruebaRegistros(unittest.TestCase):
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
         self.assertEqual(admin.rol, Usuario.TipoRol.SUPERUSUARIO)
-
+        self.assertTrue(admin.verificarRol(Usuario.TipoRol.SUPERUSUARIO))
+        self.assertTrue(admin.verificarRol(Usuario.TipoRol.ADMINISTRADOR))
+        self.assertTrue(admin.verificarRol(Usuario.TipoRol.USUARIO))
 
 class Administrador(Usuario,metaclass=Tabla):
     @sobrecargar
@@ -366,6 +368,9 @@ class PruebaUsuario(unittest.TestCase):
         juan2 = juan.ingresar(self.bdd, f"juan@juan.juan{u}", "JuanJuan!1234")
         self.assertEqual(juan2.correo, f"juan@juan.juan{u}")
         self.assertEqual(juan2.rol, Usuario.TipoRol.USUARIO)
+        self.assertFalse(juan2.verificarRol(Usuario.TipoRol.SUPERUSUARIO))
+        self.assertFalse(juan2.verificarRol(Usuario.TipoRol.ADMINISTRADOR))
+        self.assertTrue(juan2.verificarRol(Usuario.TipoRol.USUARIO))
 
     def test_crear_administrador(self):
         u = datetime.now().microsecond
@@ -385,6 +390,9 @@ class PruebaUsuario(unittest.TestCase):
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
         self.assertEqual(admin.rol, Usuario.TipoRol.ADMINISTRADOR)
+        self.assertFalse(admin.verificarRol(Usuario.TipoRol.SUPERUSUARIO))
+        self.assertTrue(admin.verificarRol(Usuario.TipoRol.ADMINISTRADOR))
+        self.assertTrue(admin.verificarRol(Usuario.TipoRol.USUARIO))
 
 
 

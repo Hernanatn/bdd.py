@@ -178,7 +178,7 @@ class Usuario(Registro):
         return self
     
     def verificarRol(self, r: Usuario.TipoRol) -> bool:
-        return self.rol >= r
+        return self.rol.value >= r.value
 
     @staticmethod
     def encriptarContraseña(contrasena: str, sal: bytes = None) -> tuple[bytes, bytes]:
