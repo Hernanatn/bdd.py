@@ -10,7 +10,7 @@ on:
 
 jobs:
   pruebas:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8.0
@@ -26,6 +26,7 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
@@ -41,62 +42,50 @@ jobs:
           pip install coverage
 
       - name: Ejecutar script de pruebas
-        id: pruebas
-        shell: pwsh
         run: |
-              $ErrorActionPreference = "Stop"
-              $salida = "fuente/chastack_bdd/pruebas/reportes"
-              $proceso = Start-Process `
-                  -FilePath "powershell" `
-                  -ArgumentList "-ExecutionPolicy Bypass -File correr_pruebas.ps1" `
-                  -RedirectStandardOutput "$salida/informe.txt" `
-                  -RedirectStandardError "$salida/resultado.txt" `
-                  -NoNewWindow `
-                  -Wait `
-                  -PassThru
+          chmod +x correr_pruebas.sh
+          ./correr_pruebas.sh "$@" > fuente/chastack_bdd/pruebas/reportes/resultado.txt 2>&1
 
-              $resultado = Get-Content "$salida/resultado.txt"
-              $informe = Get-Content "$salida/informe.txt"
+          resultado=$(cat fuente/chastack_bdd/pruebas/reportes/resultado.txt)
+          informe=$(<fuente/chastack_bdd/pruebas/reportes/informe.txt)
 
-              $tieneErrores  = $resultado -match 'FAILED\s+\((.*?errors=\d+)'
-              $tieneFallos   = $resultado -match 'FAILED\s+\((.*?failures=\d+)'
-              $todoOK       = $resultado | Where-Object { $_ -match '^\s*OK\s*$' }
+          tieneErrores=$(echo "$resultado" | grep -E 'FAILED\s+\(.*errors=[1-9]' || true)
+          tieneFallos=$(echo "$resultado" | grep -E 'FAILED\s+\(.*failures=[1-9]' || true)
+          todoOK=$(echo "$resultado" | grep -E '^\s*OK\s*$' || true)
 
-              echo ("::notice::Resultado".PadRight(50) +": $($resultado[-1])")
+          echo "::notice::Resultado: $(echo "$resultado" | tail -n 1)"
 
-              $lineaSobrecargar = $informe | Where-Object { $_ -match 'sobrecargar\\sobrecargar\.py' }
-              if (-not $lineaSobrecargar) {
-                  echo ("::error::No se encontró la línea de cobertura de sobrecargar.py")
-                  exit 1
-              }
+          lineaSobrecargar=$(echo "$informe" | grep -E 'sobrecargar/sobrecargar\.py' || true)
+          if [ -z "$lineaSobrecargar" ]; then
+              echo "::error::No se encontró la línea de cobertura de sobrecargar.py"
+              exit 1
+          fi
 
-              $campos = $lineaSobrecargar -split '\s+'
-              $porcentaje = $campos[-1].TrimEnd('%') -as [double]
-              echo ("::notice::Cobertura sobrecargar.py".PadRight(50) + ": $porcentaje%")
+          porcentaje_sobrecargar=$(echo "$lineaSobrecargar" | awk '{print $NF}' | tr -d '%')
+          echo "::notice::Cobertura sobrecargar.py: ${porcentaje_sobrecargar}%"
 
-              $lineaTotal = $informe | Where-Object { $_ -match 'TOTAL' }
-              if (-not $lineaTotal) {
-                  echo ("::error::No se encontró la línea de cobertura de sobrecargar.py")
-                  exit 1
-              }
+          lineaTotal=$(echo "$informe" | grep -E 'TOTAL' || true)
+          if [ -z "$lineaTotal" ]; then
+              echo "::error::No se encontró la línea TOTAL"
+              exit 1
+          fi
 
-              $campos = $lineaTotal -split '\s+'
-              $porcentaje = $campos[-1].TrimEnd('%') -as [double]
-              echo ("::notice::Cobertura total".PadRight(50) + ": $porcentaje%")
+          porcentaje_total=$(echo "$lineaTotal" | awk '{print $NF}' | tr -d '%')
+          echo "::notice::Cobertura total: ${porcentaje_total}%"
 
-              if ($tieneErrores -or $porcentaje -lt 50) {
-                  echo ("::error::Cobertura < 50% o errores en las pruebas.")
-                  exit 1
-              }
+          if [ -n "$tieneErrores" ] || [ "$porcentaje_total" -lt 50 ]; then
+              echo "::error::Cobertura < 50% o errores en las pruebas."
+              exit 1
+          fi
 
-              if ($tieneFallos -or ($porcentaje -ge 50 -and $porcentaje -lt 65)) {
-                  echo ("::warning::Pruebas con fallos o cobertura entre 50% y 65%. Revisión manual requerida.")
-                  exit 1
-              }
+          if [ -n "$tieneFallos" ] || { [ "$porcentaje_total" -ge 50 ] && [ "$porcentaje_total" -lt 65 ]; }; then
+              echo "::warning::Pruebas con fallos o cobertura entre 50% y 65%. Revisión manual requerida."
+              exit 1
+          fi
 
-              if (-not $todoOK) {
-                  echo ("::error::No se detectó salida OK, posible error de parsing.")
-                  exit 1
-              }
+          if [ -z "$todoOK" ]; then
+              echo "::error::No se detectó salida OK, posible error de parsing."
+              exit 1
+          fi
 
-              Write-Host "Pruebas OK y cobertura suficiente." -ForegroundColor Green
+          echo "Pruebas OK y cobertura suficiente."

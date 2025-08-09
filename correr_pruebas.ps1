@@ -1,4 +1,3 @@
-$env:MYQL_ROOT_PASSWORD= Get-Content .secretos\mysql_root_p -Raw;
 $fuente = "fuente"
 cd $fuente;
 $salida = "chastack_bdd/pruebas/reportes"

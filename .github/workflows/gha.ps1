@@ -1,4 +1,5 @@
 cd ../..
+$env:MYQL_ROOT_PASSWORD= Get-Content .secretos\mysql_root_p -Raw;
 $ErrorActionPreference = "Stop"
 $salida = "fuente/chastack_bdd/pruebas/reportes"
 $proceso = Start-Process `
