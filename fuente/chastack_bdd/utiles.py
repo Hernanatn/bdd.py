@@ -62,9 +62,9 @@ def formatearValorParaSQL(valor: Any, html : bool = False, parecido : bool = Fal
     if isinstance(valor, dict):
         return f"'{dumps(valor)}'"
     if isinstance(valor, bytes):
-        return f"X'{valor.hex()}'"
+        return f"'{valor.hex()}'"
     if isinstance(valor, Enum):
-        return str(valor.value) if isinstance(valor.value, int) else f"'{valor.name}'"
+        return f"'{valor.name}'"
     if isinstance(valor, str):
         return f"'{prefijo}{valor.replace("'", "''").replace(" ", infijo)}{sufijo}'"
         

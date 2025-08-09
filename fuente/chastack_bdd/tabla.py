@@ -1,8 +1,9 @@
 from chastack_bdd.tipos import *
 from chastack_bdd.utiles import *
-from chastack_bdd.bdd import ProtocoloBaseDeDatos
+import chastack_bdd.bdd as chbdd
 from chastack_bdd.registro import Registro, RegistroIntermedio
 
+chbdd.mysql.ConfigMySQL
 class Tabla(type):
     def __new__(mcs, nombre, bases, atributos):
     
@@ -25,7 +26,7 @@ class Tabla(type):
         cls.__INICIALIZADA = False
         cls.__DEBUG = lambda msj : None
 
-    def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales): 
+    def __call__(cls, bdd: chbdd.ProtocoloBaseDeDatos, *posicionales, **nominales): 
         if nominales and nominales.get("debug", False):
             cls.__DEBUG = lambda msj: print(f"[DEBUG] {msj.rstrip()}")
         cls.__DEBUG(f"Se llamó a la clase {cls.__qualname__}. Instanciando objeto.")
@@ -54,6 +55,7 @@ class Tabla(type):
             cls.__DEBUG(f"Inicializando modelo para: {cls.__tabla}.")
             slots :list[str] = []        
             anotaciones : dict[str,type] = {}
+            cls.__bdd = bdd
             with bdd as bdd:
                 resultados = bdd.DESCRIBE(cls.__tabla).ejecutar().devolverResultados()
             
@@ -74,7 +76,6 @@ class Tabla(type):
                     
                     if es_clave or es_auto:
                         setattr(cls, nombre_campo, property(lambda self, nombre_=nombre_campo: devolverAtributoPrivado(self,nombre_)))
-                    cls.__bdd = bdd
             cls.__slots__ = cls.__slots__ + tuple(slots)
             cls.__annotations__.update(anotaciones)
             cls.__INICIALIZADA = True
@@ -83,112 +84,158 @@ class Tabla(type):
 
     @classmethod
     def __resolverTipo(cls, tipo_sql: str, nombre_columna: Optional[str]) -> type:
-        """
-        Deduce y devuelve un tipo de Python en base al tipo declarado en MySQL para la columna.
-        Si encuentra un ENUM, crea un enum de Python y lo guarda como una constante de la clase.
-        
-        Parámetros:
-            :arg tipo_sql str: El tipo definido en MySQL
-            :arg nombre_columna Optional[str]: El nombre de la columna (útil para enums)
-        
-        Devuelve:
-            :arg tipo `type`: el tipo python correspondiente (o `Any`)
-        """
-        tipo_declarado: Optional[Match[AnyStr]] = match(r'([a-z]+)(\(.*\))?', tipo_sql.lower())
+        from chastack_bdd.bdd.mysql import BaseDeDatos_MySQL
+        from chastack_bdd.bdd.postgresql import BaseDeDatos_PostgreSQL
+
+        tipo_declarado = match(r'([a-z]+)(\(.*\))?', tipo_sql.lower())
         if not tipo_declarado:
             return Any
 
-        tipo_base: str = tipo_declarado.group(1)
-        parametros: str = tipo_declarado.group(2) if tipo_declarado.group(2) else ""
-        tipo_completo: str = tipo_base + parametros
+        tipo_base = tipo_declarado.group(1)
+        parametros = tipo_declarado.group(2) or ""
+        tipo_completo = tipo_base + parametros
 
-        tipos: dict[str, type] = {
-            'tinyint': int,
-            'smallint': int,
-            'mediumint': int,
-            'int': int,
-            'bigint': int,
-            'float': float,
-            'double': float,
-            'decimal': Decimal,
-            'datetime': datetime,
-            'timestamp': datetime,
-            'date': date,
-            'time': time,
-            'char': str,
-            'varchar': str,
-            'text': str,
-            'mediumtext': str,
-            'longtext': str,
-            'tinytext': str,
-            'boolean': bool,
-            'bool': bool,
-            'tinyint(1)': bool,
-            'blob': bytearray,
-            'mediumblob': bytearray,
-            'longblob': bytearray,
-            'tinyblob': bytearray,
-            'binary': bytes,
-            'varbinary': bytes,
-            'json': dict,
-        }
+        # Detectar motor
+        bdd = devolverAtributoPrivado(cls, "bdd", None)
+        es_mysql = isinstance(bdd, BaseDeDatos_MySQL)
+        es_postgres = isinstance(bdd, BaseDeDatos_PostgreSQL)
 
-        
-        if tipo_base == 'enum':
-            valores_enum: list[Any] = findall(r"'([^']*)'", tipo_sql)
-            dicc_enum: dict[str, int] = {'_invalido': 0}
-            for i, val in enumerate(valores_enum, 1):   
-                dicc_enum[val] = i
-            
-            nombre_enum: str = f"Tipo{nombre_columna.capitalize()}" if nombre_columna else f"__ENUM_{token_urlsafe(4)}"
-            clase_enum: type = type(
-                nombre_enum,
-                (EnumSQL, Enum),
-                dicc_enum
-            )
-            
-            setattr(cls,nombre_enum,clase_enum)
-            return clase_enum
+        if es_mysql:
+            tipos = {
+                'tinyint': int,
+                'smallint': int,
+                'mediumint': int,
+                'int': int,
+                'bigint': int,
+                'float': float,
+                'double': float,
+                'decimal': Decimal,
+                'datetime': datetime,
+                'timestamp': datetime,
+                'date': date,
+                'time': time,
+                'char': str,
+                'varchar': str,
+                'text': str,
+                'mediumtext': str,
+                'longtext': str,
+                'tinytext': str,
+                'boolean': bool,
+                'bool': bool,
+                'tinyint(1)': bool,
+                'blob': bytearray,
+                'mediumblob': bytearray,
+                'longblob': bytearray,
+                'tinyblob': bytearray,
+                'binary': bytes,
+                'varbinary': bytes,
+                'json': dict,
+            }
 
-        
-        if tipo_completo in tipos:
-            return tipos[tipo_completo]
-        return tipos.get(tipo_base, Any)
+            if tipo_base == 'enum':
+                valores_enum = findall(r"'([^']*)'", tipo_sql)
+                dicc_enum = {'_invalido': 0}
+                for i, val in enumerate(valores_enum, 1):
+                    dicc_enum[val] = i
+                nombre_enum = f"Tipo{nombre_columna.capitalize()}" if nombre_columna else f"__ENUM_{token_urlsafe(4)}"
+                clase_enum = type(nombre_enum, (EnumSQL, Enum), dicc_enum)
+                setattr(cls, nombre_enum, clase_enum)
+                return clase_enum
+
+            if tipo_completo in tipos:
+                return tipos[tipo_completo]
+            return tipos.get(tipo_base, Any)
+
+        elif es_postgres:
+            tipos = {
+                'smallint': int,
+                'integer': int,
+                'bigint': int,
+                'real': float,
+                'double precision': float,
+                'numeric': Decimal,
+                'timestamp': datetime,
+                'timestamp without time zone': datetime,
+                'timestamp with time zone': datetime,
+                'date': date,
+                'time': time,
+                'time without time zone': time,
+                'time with time zone': time,
+                'char': str,
+                'character': str,
+                'character varying': str,
+                'varchar': str,
+                'text': str,
+                'boolean': bool,
+                'bytea': bytes,
+                'json': dict,
+                'jsonb': dict,
+            }
+
+            # ENUM en PostgreSQL (requiere introspección al catálogo)
+            if tipo_base == 'enum' or tipo_sql.startswith('"') or '.' in tipo_sql:
+                # tipo_sql vendría con el nombre del tipo definido
+                valores_enum = bdd.obtener_valores_enum(tipo_sql)  # Método que ud debe implementar en el protocolo PG
+                dicc_enum = {'_invalido': 0}
+                for i, val in enumerate(valores_enum, 1):
+                    dicc_enum[val] = i
+                nombre_enum = f"Tipo{nombre_columna.capitalize()}" if nombre_columna else f"__ENUM_{token_urlsafe(4)}"
+                clase_enum = type(nombre_enum, (EnumSQL, Enum), dicc_enum)
+                setattr(cls, nombre_enum, clase_enum)
+                return clase_enum
+
+            return tipos.get(tipo_sql, Any)
+
+        else:
+            # Motor desconocido: fallback básico
+            return str
 
     @classmethod
     def __tipoSQLDesdePython(cls, tipo_python: type) -> str:
-        """
-        Devuelve el tipo SQL correspondiente a un tipo de Python.
-        Si el tipo es un Enum generado por __resolverTipo, intenta reconstruir el ENUM SQL.
-        
-        Parámetros:
-            :arg tipo_python type: el tipo de Python (p. ej., int, str, Enum, etc.)
+        from chastack_bdd.bdd.mysql import BaseDeDatos_MySQL
+        from chastack_bdd.bdd.postgresql import BaseDeDatos_PostgreSQL
 
-        Devuelve:
-            :arg str: el tipo SQL correspondiente
-        """
-        # Mapeo inverso de tipos básicos
-        tipos_inversos: dict[type, str] = {
-            int: 'int',
-            float: 'double',
-            Decimal: 'decimal(10,2)',
-            datetime: 'timestamp',
-            date: 'date',
-            time: 'time',
-            str: 'varchar(255)',
-            bool: 'tinyint(1)',
-            bytes: 'varbinary(255)',
-            bytearray: 'blob',
-            dict: 'json',
-        }
+        bdd = devolverAtributoPrivado(cls, "bdd", None)
+        es_mysql = isinstance(bdd, BaseDeDatos_MySQL)
+        es_postgres = isinstance(bdd, BaseDeDatos_PostgreSQL)
 
-        # Enums definidos dinámicamente por __resolverTipo
         if isinstance(tipo_python, type) and issubclass(tipo_python, EnumSQL):
             valores = [f"'{e.name}'" for e in tipo_python if e.name != '_invalido']
-            return f"enum({','.join(valores)})"
+            return f"ENUM({','.join(valores)})" if es_mysql else f"CREATE TYPE AS ENUM ({','.join(valores)})"
 
-        return tipos_inversos.get(tipo_python, 'text').upper()
+        if es_mysql:
+            tipos_inversos = {
+                int: 'int',
+                float: 'double',
+                Decimal: 'decimal(10,2)',
+                datetime: 'timestamp',
+                date: 'date',
+                time: 'time',
+                str: 'varchar(255)',
+                bool: 'tinyint(1)',
+                bytes: 'varbinary(255)',
+                bytearray: 'blob',
+                dict: 'json',
+            }
+            return tipos_inversos.get(tipo_python, 'text').upper()
 
+        elif es_postgres:
+            tipos_inversos = {
+                int: 'integer',
+                float: 'double precision',
+                Decimal: 'numeric(10,2)',
+                datetime: 'timestamp without time zone',
+                date: 'date',
+                time: 'time without time zone',
+                str: 'varchar(255)',
+                bool: 'boolean',
+                bytes: 'bytea',
+                dict: 'jsonb',
+            }
+            return tipos_inversos.get(tipo_python, 'text')
+
+        else:
+            return 'text'
 
     
 class TablaIntermedia(type):
@@ -213,7 +260,7 @@ class TablaIntermedia(type):
         cls.__INICIALIZADA = False
         cls.__DEBUG = lambda msj : None
 
-    def __call__(cls, bdd: ProtocoloBaseDeDatos, *posicionales, **nominales): 
+    def __call__(cls, bdd: chbdd.ProtocoloBaseDeDatos, *posicionales, **nominales): 
         if nominales and nominales.get("debug", False):
             cls.__DEBUG = lambda msj: print(f"[DEBUG] {msj.rstrip()}")
         cls.__DEBUG(f"Se llamó a la clase {cls.__qualname__}. Instanciando objeto.")

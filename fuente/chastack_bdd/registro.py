@@ -45,7 +45,7 @@ class Registro:
             if valor_SQL is not None:
                 valor = valor_SQL
                 tipo_esperado : type =get_type_hints(self)[atributo]
-                if isinstance(valor_SQL,tipo_esperado):
+                if tipo_esperado is Any or isinstance(valor_SQL,tipo_esperado):
                     valor = valor_SQL
                 elif esSubclaseUnion(tipo_esperado, Decimal):
                     valor : Decimal = Decimal(valor_SQL)

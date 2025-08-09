@@ -1,4 +1,5 @@
-$env:MYQL_ROOT_PASSWORD= Get-Content ..\.secretos\mysql_root_p -Raw;
+$env:PG_ROOT_PASSWORD= Get-Content ..\.secretos\pg_root_p -Raw;
+$env:MYSQL_ROOT_PASSWORD= Get-Content ..\.secretos\mysql_root_p -Raw;
 $salida = "chastack_bdd/pruebas/reportes"
 if (-not (Test-Path $salida)) {
     New-Item -ItemType Directory -Path $salida | Out-Null
