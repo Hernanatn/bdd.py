@@ -35,7 +35,7 @@ def crearBaseDeDatos():
             """)
 
         cursor.execute("FLUSH PRIVILEGES;")
-        print("Base de datos y usuario creados con éxito.")
+        #print("Base de datos y usuario creados con éxito.")
     except mysql.connector.Error as err:
         print("Error:", err)
     finally:
@@ -173,7 +173,7 @@ def crearYPoblarTablas():
         ## """)
 
         conn.commit()
-        print("Todas las tablas se han creado correctamente.")
+        #print("Todas las tablas se han creado correctamente.")
 
     except Error as e:
         print("Error al crear las tablas:", e, '\n', traceback.format_exc())
@@ -254,7 +254,7 @@ def crearYPoblarTablas():
         # //""")
 
         conn.commit()
-        print("¡Inserciones completadas con éxito!")
+        #print("¡Inserciones completadas con éxito!")
 
     except Error as e:
         print(f"Error al conectar o insertar:", e, '\n', traceback.format_exc())
@@ -274,7 +274,7 @@ def destruirBaseDeDatos():
         cursor.execute("DROP DATABASE IF EXISTS `chastack_bdd_pruebas`;")
         cursor.execute("DROP USER IF EXISTS 'usuario_de_prueba'@'localhost';")
         cursor.execute("FLUSH PRIVILEGES;")
-        print("Base de datos y usuario eliminados con éxito.")
+        #print("Base de datos y usuario eliminados con éxito.")
     except mysql.connector.Error as err:
         print("Error:", err)
     finally:
@@ -306,7 +306,7 @@ class PruebaRegistros(unittest.TestCase):
             "bio": 'una biografia aleatoria\nde juan pelotas.',
         })
         cliente.guardar()
-        print(cliente)
+        #print(cliente)
         self.assertIsNotNone(cliente.id)
         self.assertEqual(cliente.id,1)
         u = datetime.now().microsecond
@@ -322,7 +322,7 @@ class PruebaRegistros(unittest.TestCase):
             )
         )
         admin.guardar()
-        print(admin)
+        #print(admin)
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
         self.assertEqual(admin.rol, Usuario.TipoRol.SUPERUSUARIO)
@@ -363,7 +363,7 @@ class PruebaUsuario(unittest.TestCase):
         )
         self.assertIsNotNone(juan)
         juan.guardar()
-        print(juan)
+        #print(juan)
         self.assertIsNotNone(juan.id)
         juan2 = juan.ingresar(self.bdd, f"juan@juan.juan{u}", "JuanJuan!1234")
         self.assertEqual(juan2.correo, f"juan@juan.juan{u}")
@@ -386,7 +386,7 @@ class PruebaUsuario(unittest.TestCase):
             )
         )
         admin.guardar()
-        print(admin)
+        #print(admin)
         self.assertIsNotNone(admin.id)
         self.assertEqual(admin.nombre, "Admin")
         self.assertEqual(admin.rol, Usuario.TipoRol.ADMINISTRADOR)
@@ -433,7 +433,7 @@ class PruebaTablaIntermedia(unittest.TestCase):
         nota.añadirVoz(voces[1])
         nota.añadirVoz(Voz(self.bdd, id=voces[2].id))
         nota.guardar()
-        print(nota)
+        #print(nota)
         self.assertIsNotNone(nota.id)
         obtenidas = nota.obtenerVoces()
         self.assertGreaterEqual(len(obtenidas), 3)
@@ -443,7 +443,7 @@ class PruebaTablaIntermedia(unittest.TestCase):
             nota.borrarVoz(voz)
             break
         nota.guardar()
-        print(nota)
+        #print(nota)
         self.assertIsNotNone(nota.id)
         nota_recargada = Nota(self.bdd, id=nota.id)
         self.assertIsInstance(nota_recargada, Nota)

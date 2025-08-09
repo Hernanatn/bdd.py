@@ -1,0 +1,102 @@
+name: Pruebas y cobertura de sobrecargar.py
+
+on:
+  push:
+    paths:
+      - 'fuente/**'
+  pull_request:
+    paths:
+      - 'fuente/**'
+
+jobs:
+  pruebas:
+    runs-on: windows-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.3'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage
+
+      - name: Ejecutar script de pruebas
+        id: pruebas
+        shell: pwsh
+        run: |
+              $ErrorActionPreference = "Stop"
+              $salida = "fuente/chastack_bdd/pruebas/reportes"
+              $proceso = Start-Process `
+                  -FilePath "powershell" `
+                  -ArgumentList "-ExecutionPolicy Bypass -File correr_pruebas.ps1" `
+                  -RedirectStandardOutput "$salida/informe.txt" `
+                  -RedirectStandardError "$salida/resultado.txt" `
+                  -NoNewWindow `
+                  -Wait `
+                  -PassThru
+
+              $resultado = Get-Content "$salida/resultado.txt"
+              $informe = Get-Content "$salida/informe.txt"
+
+              $tieneErrores  = $resultado -match 'FAILED\s+\((.*?errors=\d+)'
+              $tieneFallos   = $resultado -match 'FAILED\s+\((.*?failures=\d+)'
+              $todoOK       = $resultado | Where-Object { $_ -match '^\s*OK\s*$' }
+
+              echo ("::notice::Resultado".PadRight(50) +": $($resultado[-1])")
+
+              $lineaSobrecargar = $informe | Where-Object { $_ -match 'sobrecargar\\sobrecargar\.py' }
+              if (-not $lineaSobrecargar) {
+                  echo ("::error::No se encontró la línea de cobertura de sobrecargar.py")
+                  exit 1
+              }
+
+              $campos = $lineaSobrecargar -split '\s+'
+              $porcentaje = $campos[-1].TrimEnd('%') -as [double]
+              echo ("::notice::Cobertura sobrecargar.py".PadRight(50) + ": $porcentaje%")
+
+              $lineaTotal = $informe | Where-Object { $_ -match 'TOTAL' }
+              if (-not $lineaTotal) {
+                  echo ("::error::No se encontró la línea de cobertura de sobrecargar.py")
+                  exit 1
+              }
+
+              $campos = $lineaTotal -split '\s+'
+              $porcentaje = $campos[-1].TrimEnd('%') -as [double]
+              echo ("::notice::Cobertura total".PadRight(50) + ": $porcentaje%")
+
+              if ($tieneErrores -or $porcentaje -lt 50) {
+                  echo ("::error::Cobertura < 50% o errores en las pruebas.")
+                  exit 1
+              }
+
+              if ($tieneFallos -or ($porcentaje -ge 50 -and $porcentaje -lt 65)) {
+                  echo ("::warning::Pruebas con fallos o cobertura entre 50% y 65%. Revisión manual requerida.")
+                  exit 1
+              }
+
+              if (-not $todoOK) {
+                  echo ("::error::No se detectó salida OK, posible error de parsing.")
+                  exit 1
+              }
+
+              Write-Host "Pruebas OK y cobertura suficiente." -ForegroundColor Green
