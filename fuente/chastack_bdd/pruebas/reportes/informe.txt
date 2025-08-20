@@ -1,20 +1,16 @@
 Name                               Stmts   Miss  Cover
 ------------------------------------------------------
-chastack_bdd\__init__.py               9      1    89%
-chastack_bdd\bdd.py                  248     38    85%
-chastack_bdd\errores\__init__.py       9      0   100%
-chastack_bdd\registro.py             206     31    85%
-chastack_bdd\tabla.py                168     19    89%
-chastack_bdd\tipos\__init__.py        33      0   100%
-chastack_bdd\tipos\enum_sql.py        37      1    97%
-chastack_bdd\tipos\unico_sql.py       35     19    46%
-chastack_bdd\usuario\__init__.py       1      0   100%
-chastack_bdd\usuario\errores.py        2      0   100%
-chastack_bdd\usuario\usuario.py      105     19    82%
-chastack_bdd\utiles.py                66     21    68%
+chastack_bdd/__init__.py               9      1    89%
+chastack_bdd/bdd.py                  233     38    84%
+chastack_bdd/errores/__init__.py       9      0   100%
+chastack_bdd/registro.py             206     31    85%
+chastack_bdd/tabla.py                168     19    89%
+chastack_bdd/tipos/__init__.py        33      0   100%
+chastack_bdd/tipos/enum_sql.py        37      1    97%
+chastack_bdd/tipos/unico_sql.py       35     19    46%
+chastack_bdd/usuario/__init__.py       1      0   100%
+chastack_bdd/usuario/errores.py        2      0   100%
+chastack_bdd/usuario/usuario.py      104     19    82%
+chastack_bdd/utiles.py                66     21    68%
 ------------------------------------------------------
-TOTAL                                919    149    84%
-Wrote HTML report to chastack_bdd/pruebas/reportes/htmlcov\index.html
-Wrote XML report to chastack_bdd/pruebas/reportes/coverage.xml
-
-Reporte guardado en chastack_bdd/pruebas/reportes
+TOTAL                                903    149    83%

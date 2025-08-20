@@ -41,8 +41,8 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          pip install sobrecargar solteron mysql-connector-python coverage
-
+          pip install sobrecargar solteron "mysql-connector-python>=8.2.0,<9.2.1" coverage
+      
       - name: Ejecutar script de pruebas
         run: |
           chmod +x correr_pruebas.sh
@@ -51,27 +51,23 @@ jobs:
           resultado=$(cat fuente/chastack_bdd/pruebas/reportes/resultado.txt)
           informe=$(<fuente/chastack_bdd/pruebas/reportes/informe.txt)
 
-          tieneErrores=$(echo "$resultado" | grep -E 'FAILED\s+\(.*errors=[1-9]' || true)
-          tieneFallos=$(echo "$resultado" | grep -E 'FAILED\s+\(.*failures=[1-9]' || true)
-          todoOK=$(echo "$resultado" | grep -E '^\s*OK\s*$' || true)
+          tieneErrores=$(grep -E 'errors=[1-9]' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
+          tieneFallos=$(grep -E 'failures=[1-9]' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
+          todoOK=$(grep -E 'OK' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
 
-          echo "::notice::Resultado: $(echo "$resultado" | tail -n 1)"
-
-          lineaTotal=$(echo "$informe" | grep -E 'TOTAL' || true)
+          lineaTotal=$(grep -E 'TOTAL' fuente/chastack_bdd/pruebas/reportes/informe.txt || true)
           if [ -z "$lineaTotal" ]; then
               echo "::error::No se encontró la línea TOTAL"
               exit 1
           fi
-
           porcentaje_total=$(echo "$lineaTotal" | awk '{print $NF}' | tr -d '%')
-          echo "::notice::Cobertura total: ${porcentaje_total}%"
 
-          if [ -n "$tieneErrores" ] || [ "$porcentaje_total" -lt 50 ]; then
+          if [ -n "$tieneErrores" ] || [ -z "$porcentaje_total" ] || [ "$porcentaje_total" -lt 50 ]; then
               echo "::error::Cobertura < 50% o errores en las pruebas."
               exit 1
           fi
 
-          if [ -n "$tieneFallos" ] || { [ "$porcentaje_total" -ge 50 ] && [ "$porcentaje_total" -lt 65 ]; }; then
+          if [ -n "$tieneFallos" ] || ([ "$porcentaje_total" -ge 50 ] && [ "$porcentaje_total" -lt 65 ]); then
               echo "::warning::Pruebas con fallos o cobertura entre 50% y 65%. Revisión manual requerida."
               exit 1
           fi
