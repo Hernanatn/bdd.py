@@ -13,6 +13,8 @@ on:
 jobs:
   pruebas:
     runs-on: ubuntu-latest
+    env:
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
     services:
       mysql:
         image: mysql:8.0
@@ -42,29 +44,45 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install sobrecargar solteron "mysql-connector-python>=8.2.0,<9.2.1" coverage
-      
+
+      - name: Esperar a que MySQL esté listo
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" --silent; do
+            echo "Esperando que MySQL esté listo..."
+            sleep 2
+          done
+
       - name: Ejecutar script de pruebas
         run: |
-          chmod +x correr_pruebas.sh;
-          ./correr_pruebas.sh #"$@" \
-              #> fuente/chastack_bdd/pruebas/reportes/informe.txt \
-              #2> fuente/chastack_bdd/pruebas/reportes/resultado.txt
+          chmod +x correr_pruebas.sh
+          ./correr_pruebas.sh "$@" \
+              > fuente/chastack_bdd/pruebas/reportes/informe.txt \
+              2> fuente/chastack_bdd/pruebas/reportes/resultado.txt
 
-          resultado=$(cat fuente/chastack_bdd/pruebas/reportes/resultado.txt)
+          
+          resultado=$(<fuente/chastack_bdd/pruebas/reportes/resultado.txt)
           informe=$(<fuente/chastack_bdd/pruebas/reportes/informe.txt)
 
+          
           tieneErrores=$(grep -E 'errors=[1-9]' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
           tieneFallos=$(grep -E 'failures=[1-9]' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
           todoOK=$(grep -E 'OK' fuente/chastack_bdd/pruebas/reportes/resultado.txt || true)
 
-          lineaTotal=$(grep -E 'TOTAL' fuente/chastack_bdd/pruebas/reportes/informe.txt || true)
+          
+          lineaTotal=$(grep -i 'TOTAL' fuente/chastack_bdd/pruebas/reportes/informe.txt || true)
           if [ -z "$lineaTotal" ]; then
               echo "::error::No se encontró la línea TOTAL"
               exit 1
           fi
-          porcentaje_total=$(echo "$lineaTotal" | awk '{print $NF}' | tr -d '%')
+          porcentaje_total=$(echo "$lineaTotal" | awk '{print $NF}' | tr -d '% ')
 
-          if [ -n "$tieneErrores" ] || [ -z "$porcentaje_total" ] || [ "$porcentaje_total" -lt 50 ]; then
+          if ! [[ "$porcentaje_total" =~ ^[0-9]+$ ]]; then
+              echo "::error::Cobertura no es un número válido: '$porcentaje_total'"
+              exit 1
+          fi
+
+          
+          if [ -n "$tieneErrores" ] || [ "$porcentaje_total" -lt 50 ]; then
               echo "::error::Cobertura < 50% o errores en las pruebas."
               exit 1
           fi
