@@ -55,9 +55,9 @@ jobs:
       - name: Ejecutar script de pruebas
         run: |
           chmod +x correr_pruebas.sh
-          ./correr_pruebas.sh "$@" \
-              > fuente/chastack_bdd/pruebas/reportes/informe.txt \
-              2> fuente/chastack_bdd/pruebas/reportes/resultado.txt
+          ./correr_pruebas.sh #"$@" \
+              #> fuente/chastack_bdd/pruebas/reportes/informe.txt \
+              #2> fuente/chastack_bdd/pruebas/reportes/resultado.txt
 
           
           resultado=$(<fuente/chastack_bdd/pruebas/reportes/resultado.txt)
