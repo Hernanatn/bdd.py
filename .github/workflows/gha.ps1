@@ -23,7 +23,7 @@ echo ("::notice::Resultado".PadRight(50) +": $($resultado[-1])")
 
 $lineaTotal = $informe | Where-Object { $_ -match 'TOTAL' }
 if (-not $lineaTotal) {
-    echo ("::error::No se encontró la línea de cobertura de sobrecargar.py")
+    echo ("::error::No se encontró la línea de cobertura.")
     exit 1
 }
 

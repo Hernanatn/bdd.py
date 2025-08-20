@@ -12,15 +12,6 @@ todoOK=$(echo "$resultado" | grep -E '^\s*OK\s*$' || true)
 
 echo "::notice::Resultado: $(echo "$resultado" | tail -n 1)"
 
-lineaSobrecargar=$(echo "$informe" | grep -E 'sobrecargar/sobrecargar\.py' || true)
-if [ -z "$lineaSobrecargar" ]; then
-    echo "::error::No se encontró la línea de cobertura de sobrecargar.py"
-    exit 1
-fi
-
-porcentaje_sobrecargar=$(echo "$lineaSobrecargar" | awk '{print $NF}' | tr -d '%')
-echo "::notice::Cobertura sobrecargar.py: ${porcentaje_sobrecargar}%"
-
 lineaTotal=$(echo "$informe" | grep -E 'TOTAL' || true)
 if [ -z "$lineaTotal" ]; then
     echo "::error::No se encontró la línea TOTAL"

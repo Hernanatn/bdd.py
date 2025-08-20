@@ -448,8 +448,7 @@ class PruebaTablaIntermedia(unittest.TestCase):
         nota_recargada = Nota(self.bdd, id=nota.id)
         self.assertIsInstance(nota_recargada, Nota)
 
-
-
+# REFACTORIZAR: (Hernán) Segregar pruebas en submódulos.
 if __name__ == "__main__":
     try:
         crearBaseDeDatos()
