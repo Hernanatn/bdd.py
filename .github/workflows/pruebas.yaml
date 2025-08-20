@@ -48,7 +48,7 @@ jobs:
 
       - name: Esperar a que MySQL esté listo
         run: |
-          until mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" --silent; do
+          until mysqladmin ping -h mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --silent; do
             echo "Esperando que MySQL esté listo..."
             sleep 2
           done
