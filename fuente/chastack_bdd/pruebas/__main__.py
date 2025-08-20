@@ -10,7 +10,7 @@ from mysql.connector import errorcode, Error
 import os
 import traceback
 
-ROOT_P : str = os.environ.get('MYQL_ROOT_PASSWORD')
+ROOT_P : str = os.environ.get('MYSQL_ROOT_PASSWORD')
 
 def crearBaseDeDatos():
     conn = mysql.connector.connect(

@@ -82,7 +82,7 @@ class Usuario(Registro):
         correo : str,
         contrasena : str,
         nombre_usuario : t.Optional[str] = None,
-        rol : Usuario.TipoRol = None
+        rol : t.Optional[Usuario.TipoRol] = None
         ,**nominales,
     ):
         devolverAtributoPrivado(cls,'__inicializar')(bdd) # HACER: (Herni) Generalizar a todos los @classmethods
