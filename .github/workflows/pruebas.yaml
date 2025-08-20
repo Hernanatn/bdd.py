@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: true
+      MYSQL_HOST: '127.0.0.1'
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
     services:
       mysql:
@@ -48,7 +49,7 @@ jobs:
 
       - name: Esperar a que MySQL esté listo
         run: |
-          until mysqladmin ping -h mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --silent; do
+          until mysqladmin ping -h $MYSQL_HOST -uroot -p"$MYSQL_ROOT_PASSWORD"; do
             echo "Esperando que MySQL esté listo..."
             sleep 2
           done

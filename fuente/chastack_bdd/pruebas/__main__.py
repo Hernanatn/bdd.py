@@ -11,7 +11,7 @@ import os
 import traceback
 
 CI = os.environ.get("CI", "false").lower() == "true"
-MYSQL_HOST = "mysql" if CI else "localhost"
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "127.0.0.1") if CI else "localhost"
 ROOT_P : str = os.environ.get('MYSQL_ROOT_PASSWORD')
 
 
