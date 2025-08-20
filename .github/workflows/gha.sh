@@ -1,8 +1,10 @@
 cd ../..
 export MYSQL_ROOT_PASSWORD=$(cat .secretos/mysql_root_p);
 chmod +x correr_pruebas.sh;
-./correr_pruebas.sh "$@" > fuente/chastack_bdd/pruebas/reportes/resultado.txt 2>&1
-
+./correr_pruebas.sh "$@" \
+    > fuente/chastack_bdd/pruebas/reportes/informe.txt \
+    2> fuente/chastack_bdd/pruebas/reportes/resultado.txt
+    
 resultado=$(cat fuente/chastack_bdd/pruebas/reportes/resultado.txt)
 informe=$(<fuente/chastack_bdd/pruebas/reportes/informe.txt)
 
