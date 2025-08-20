@@ -10,11 +10,15 @@ from mysql.connector import errorcode, Error
 import os
 import traceback
 
+CI = os.environ.get("CI", "false").lower() == "true"
+MYSQL_HOST = "mysql" if CI else "localhost"
 ROOT_P : str = os.environ.get('MYSQL_ROOT_PASSWORD')
+
+
 
 def crearBaseDeDatos():
     conn = mysql.connector.connect(
-        host="localhost",
+        host=MYSQL_HOST,
         user="root",
         password=ROOT_P  
     )
@@ -24,14 +28,14 @@ def crearBaseDeDatos():
         cursor.execute("CREATE DATABASE IF NOT EXISTS `chastack_bdd_pruebas`;")
 
         cursor.execute("""
-            CREATE USER IF NOT EXISTS 'usuario_de_prueba'@'localhost'
+            CREATE USER IF NOT EXISTS 'usuario_de_prueba'@'%'
             IDENTIFIED BY 'pRU3b4s!1?2@3$4';
         """)
 
         privilegios = ['SELECT', 'UPDATE', 'DELETE', 'INSERT', 'EXECUTE']
         for priv in privilegios:
             cursor.execute(f"""
-                GRANT {priv} ON chastack_bdd_pruebas.* TO 'usuario_de_prueba'@'localhost';
+                GRANT {priv} ON chastack_bdd_pruebas.* TO 'usuario_de_prueba'@'%';
             """)
 
         cursor.execute("FLUSH PRIVILEGES;")
