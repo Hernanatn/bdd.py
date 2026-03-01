@@ -374,8 +374,8 @@ class BaseDeDatos_MySQL():
             self.__conexion.commit()
         except Exception as f:
             raise type(f)(f"No se pudo completar la consulta.\n Es probable que la consulta incluya carácteres prohibidos. \n {str(self.__consulta).encode('utf-8').decode('unicode_escape')}\n") from f
-        
-        self.__consulta.reiniciar()
+        finally:
+            self.__consulta.reiniciar()
         return self
    
     def devolverIdUltimaInsercion(self : Self) -> Optional[int]:
