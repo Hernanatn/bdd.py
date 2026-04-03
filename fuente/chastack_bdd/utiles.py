@@ -41,6 +41,31 @@ def tipoSQLDesdePython(tipo_python: type) -> str:
 
     return tipos.get(tipo_python, 'text')
 
+def _escaparParaMySQL(texto: str) -> str:
+    """Escapa caracteres especiales para SQL concatenado en MySQL.
+
+    MySQL interpreta backslashes como escape characters por defecto
+    (a menos que esté activado NO_BACKSLASH_ESCAPES). Esta función
+    escapa los caracteres que rompen queries SQL construidas por
+    concatenación de strings.
+
+    IMPORTANTE: El orden de los replacements es crítico.
+    Backslash DEBE ser el primero para evitar doble-escape.
+
+    Parámetros:
+        :arg texto str: El texto a escapar.
+
+    Devuelve:
+        :return str: El texto con caracteres especiales escapados.
+    """
+    texto = texto.replace('\\', '\\\\')   # \ → \\ (PRIMERO, antes de cualquier otro!)
+    texto = texto.replace("'", "''")       # ' → '' (escape SQL estándar)
+    texto = texto.replace('\n', '\\n')     # newline → literal \n
+    texto = texto.replace('\r', '\\r')     # carriage return → literal \r
+    texto = texto.replace('\0', '')        # null byte → eliminar (corta strings en MySQL)
+    texto = texto.replace('\t', '\\t')     # tab → literal \t
+    return texto
+
 def formatearValorParaSQL(valor: Any, html : bool = False, parecido : bool = False) -> str:
     """
     Formatea un valor de Python a una representación adecuada para SQL.
@@ -60,15 +85,15 @@ def formatearValorParaSQL(valor: Any, html : bool = False, parecido : bool = Fal
     if isinstance(valor, (date, datetime, time)):
         return f"'{valor.isoformat()}'"
     if isinstance(valor, dict):
-        return f"'{dumps(valor)}'"
+        return f"'{_escaparParaMySQL(dumps(valor))}'"
     if isinstance(valor, bytes):
         return f"X'{valor.hex()}'"
     if isinstance(valor, Enum):
         return str(valor.value) if isinstance(valor.value, int) else f"'{valor.name}'"
     if isinstance(valor, str):
-        return f"'{prefijo}{valor.replace("'", "''").replace(" ", infijo)}{sufijo}'"
-        
-    return f"'{prefijo}{str(valor).replace("'", "''").replace(" ", infijo)}{sufijo}'"
+        return f"'{prefijo}{_escaparParaMySQL(valor).replace(" ", infijo)}{sufijo}'"
+
+    return f"'{prefijo}{_escaparParaMySQL(str(valor)).replace(" ", infijo)}{sufijo}'"
 
 def esSubclaseUnion(cls: type, clase_objetivo: Union[type, tuple[Union[type, tuple[Any, ...]], ...]], /) -> bool:
     """Devuelve True si cls es (o contiene) una subclase de objetivo"""

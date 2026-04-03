@@ -3,7 +3,9 @@ from chastack_bdd.bdd import ConfigMySQL, BaseDeDatos_MySQL
 from chastack_bdd.tabla import Tabla, TablaIntermedia
 from chastack_bdd.usuario import Usuario
 from chastack_bdd.tipos import TipoOrden
-from datetime import datetime
+from chastack_bdd.utiles import _escaparParaMySQL, formatearValorParaSQL
+from datetime import datetime, date, time
+from decimal import Decimal
 from sobrecargar import sobrecargar
 import mysql.connector
 from mysql.connector import errorcode, Error
@@ -451,6 +453,123 @@ class PruebaTablaIntermedia(unittest.TestCase):
         self.assertIsNotNone(nota.id)
         nota_recargada = Nota(self.bdd, id=nota.id)
         self.assertIsInstance(nota_recargada, Nota)
+
+class PruebaEscaparParaMySQL(unittest.TestCase):
+    """Pruebas unitarias para _escaparParaMySQL."""
+
+    def test_texto_sin_caracteres_especiales(self):
+        self.assertEqual(_escaparParaMySQL("hola mundo"), "hola mundo")
+
+    def test_texto_vacio(self):
+        self.assertEqual(_escaparParaMySQL(""), "")
+
+    def test_escapa_comilla_simple(self):
+        self.assertEqual(_escaparParaMySQL("O'Brien"), "O''Brien")
+
+    def test_escapa_backslash(self):
+        self.assertEqual(_escaparParaMySQL("ruta\\archivo"), "ruta\\\\archivo")
+
+    def test_escapa_newline(self):
+        self.assertEqual(_escaparParaMySQL("linea1\nlinea2"), "linea1\\nlinea2")
+
+    def test_escapa_carriage_return(self):
+        self.assertEqual(_escaparParaMySQL("linea1\rlinea2"), "linea1\\rlinea2")
+
+    def test_elimina_null_byte(self):
+        self.assertEqual(_escaparParaMySQL("hola\0mundo"), "holamundo")
+
+    def test_escapa_tab(self):
+        self.assertEqual(_escaparParaMySQL("col1\tcol2"), "col1\\tcol2")
+
+    def test_backslash_antes_de_comilla(self):
+        """Verifica que backslash se escapa ANTES que comilla simple,
+        evitando doble-escape en secuencias como \\'."""
+        self.assertEqual(_escaparParaMySQL("\\'"), "\\\\''")
+
+    def test_multiples_caracteres_especiales(self):
+        entrada = "O'Brien\\\n\r\0\t"
+        resultado = _escaparParaMySQL(entrada)
+        self.assertNotIn("\n", resultado)
+        self.assertNotIn("\r", resultado)
+        self.assertNotIn("\0", resultado)
+        self.assertNotIn("\t", resultado)
+        self.assertEqual(resultado, "O''Brien\\\\\\n\\r\\t")
+
+    def test_backslash_n_literal_no_se_doble_escapa(self):
+        """Un backslash seguido de 'n' (no un newline) debe escapar solo el backslash."""
+        self.assertEqual(_escaparParaMySQL("\\n"), "\\\\n")
+
+class PruebaFormatearValorParaSQL(unittest.TestCase):
+    """Pruebas unitarias para formatearValorParaSQL con el nuevo escapado."""
+
+    def test_none(self):
+        self.assertEqual(formatearValorParaSQL(None), "NULL")
+
+    def test_bool_true(self):
+        self.assertEqual(formatearValorParaSQL(True), "1")
+
+    def test_bool_false(self):
+        self.assertEqual(formatearValorParaSQL(False), "0")
+
+    def test_entero(self):
+        self.assertEqual(formatearValorParaSQL(42), "42")
+
+    def test_flotante(self):
+        self.assertEqual(formatearValorParaSQL(3.14), "3.14")
+
+    def test_decimal(self):
+        self.assertEqual(formatearValorParaSQL(Decimal("99.99")), "99.99")
+
+    def test_str_simple(self):
+        self.assertEqual(formatearValorParaSQL("hola"), "'hola'")
+
+    def test_str_con_comilla(self):
+        self.assertEqual(formatearValorParaSQL("O'Brien"), "'O''Brien'")
+
+    def test_str_con_backslash(self):
+        self.assertEqual(formatearValorParaSQL("ruta\\archivo"), "'ruta\\\\archivo'")
+
+    def test_str_con_newline(self):
+        self.assertEqual(formatearValorParaSQL("linea1\nlinea2"), "'linea1\\nlinea2'")
+
+    def test_str_con_tab(self):
+        self.assertEqual(formatearValorParaSQL("col1\tcol2"), "'col1\\tcol2'")
+
+    def test_str_con_carriage_return(self):
+        self.assertEqual(formatearValorParaSQL("a\rb"), "'a\\rb'")
+
+    def test_str_con_null_byte(self):
+        self.assertEqual(formatearValorParaSQL("a\0b"), "'ab'")
+
+    def test_str_parecido(self):
+        resultado = formatearValorParaSQL("buscar", parecido=True)
+        self.assertTrue(resultado.startswith("'%"))
+        self.assertTrue(resultado.endswith("%'"))
+
+    def test_date(self):
+        self.assertEqual(formatearValorParaSQL(date(2025, 1, 15)), "'2025-01-15'")
+
+    def test_datetime(self):
+        resultado = formatearValorParaSQL(datetime(2025, 1, 15, 10, 30, 0))
+        self.assertEqual(resultado, "'2025-01-15T10:30:00'")
+
+    def test_bytes(self):
+        self.assertEqual(formatearValorParaSQL(b'\xde\xad'), "X'dead'")
+
+    def test_dict_con_caracteres_especiales(self):
+        resultado = formatearValorParaSQL({"clave": "valor\ncon\nnewlines"})
+        self.assertNotIn("\n", resultado[1:-1].replace("\\n", ""))
+
+    def test_str_multiples_especiales(self):
+        entrada = "texto\ncon\\todo'\r\0\t"
+        resultado = formatearValorParaSQL(entrada)
+        self.assertTrue(resultado.startswith("'"))
+        self.assertTrue(resultado.endswith("'"))
+        interior = resultado[1:-1]
+        self.assertNotIn("\n", interior)
+        self.assertNotIn("\r", interior)
+        self.assertNotIn("\0", interior)
+        self.assertNotIn("\t", interior)
 
 # REFACTORIZAR: (Hernán) Segregar pruebas en submódulos.
 if __name__ == "__main__":
