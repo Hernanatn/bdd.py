@@ -56,5 +56,31 @@ Este documento detalla la interfaz pública y privada de las principales clases 
 #### Utilidades estáticas
 - `encriptarContraseña(contrasena: str, sal: bytes = None) -> tuple[bytes, bytes]`
 
+---
 
+## Utilidades (`utiles`)
+
+### `_escaparParaMySQL(texto: str) -> str`
+
+Escapa caracteres especiales para SQL concatenado en MySQL. MySQL interpreta backslashes como caracteres de escape por defecto (a menos que esté activado `NO_BACKSLASH_ESCAPES`). Esta función escapa los caracteres que rompen queries SQL construidas por concatenación de strings.
+
+> [!IMPORTANT]
+> El orden de los reemplazos es crítico. Backslash se escapa **primero** para evitar doble-escape.
+
+| Carácter | Escape | Motivo |
+|---|---|---|
+| `\` | `\\` | Carácter de escape de MySQL |
+| `'` | `''` | Delimitador de strings SQL |
+| `\n` | `\n` (literal) | Newline |
+| `\r` | `\r` (literal) | Carriage return |
+| `\0` | _(eliminado)_ | Null byte — corta strings en MySQL |
+| `\t` | `\t` (literal) | Tab |
+
+### `formatearValorParaSQL(valor: Any, html: bool = False, parecido: bool = False) -> str`
+
+Formatea un valor de Python a una representación adecuada para SQL. Utiliza `_escaparParaMySQL` internamente para sanitizar valores de tipo `str`, `dict` y el fallback `str(valor)`.
+
+### `tipoSQLDesdePython(tipo_python: type) -> str`
+
+Devuelve el tipo SQL correspondiente a un tipo de Python.
 
