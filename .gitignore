@@ -9,3 +9,5 @@ prueba-*
 chaskavenv
 .secretos
 .vscode
+claude
+CLAUDE.md
