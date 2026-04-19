@@ -27,7 +27,7 @@ class InstruccionPrincipal():
         Altamente acoplada con la clase Consulta y dependiente de la misma.    
     '''
 
-    _slots__ = \
+    __slots__ = \
     (
         '__instruccion'
     )
@@ -269,7 +269,7 @@ class ConfigMySQL(metaclass=Solteron):
         }
 
 class BaseDeDatos_MySQL():
-    _slots__ = \
+    __slots__ = \
     (
         "__config",
         "__conexion",
