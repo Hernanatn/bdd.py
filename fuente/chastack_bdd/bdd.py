@@ -368,7 +368,7 @@ class BaseDeDatos_MySQL():
             self.__conexion.commit()
         except AttributeError as e:
             ###print(f"[ERROR] {e}")
-            self = BaseDeDatos_MySQL()
+            self = BaseDeDatos_MySQL(self.__config)
             self.conectar()
             self.__cursor.execute(str(self.__consulta))
             self.__conexion.commit()
